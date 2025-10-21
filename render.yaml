@@ -2,10 +2,13 @@ services:
   - type: web
     name: raffles-pwa
     env: python
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT wsgi:app
+    buildCommand: |
+      python -m pip install --upgrade pip
+      python -m pip install setuptools wheel
+      pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
-        value: 3.9.18  # Using a more stable Python version
+        value: 3.9.18  # Using a stable Python version instead of 3.13
       - key: FLASK_ENV
         value: production
