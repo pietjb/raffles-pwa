@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2c5282">
+    <title>Multi-Raffle System</title>
+    
+    <!-- Update paths to root folder -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Raffles">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <link rel="stylesheet" href="/style.css">
+    <script src="/config.js"></script>
+    <script src="/script.js" defer></script>
+</head>
+<body>
+    <h1>🎟 Multi-Raffle System</h1>
+
+    <!-- Raffle Selector Section -->
+    <section id="raffle-selector">
+        <h2>Select Raffle</h2>
+        <div id="raffle-list"></div>
+        <button onclick="showNewRaffleForm()">Create New Raffle</button>
+    </section>
+
+    <!-- New Raffle Form Section -->
+    <section id="new-raffle-form" style="display: none;">
+        <h2>Create New Raffle</h2>
+        <input id="raffle-name" placeholder="Raffle Name" required>
+        <input id="draw-date" type="date" required>
+        <input id="prize" placeholder="Prize Description" required>
+        <input id="ticket-cost" type="number" step="0.01" min="0" placeholder="Ticket Cost (R)" required>
+        <input id="payment-link" type="url" placeholder="Payment Link URL" required>
+        <button onclick="createRaffle()">Create Raffle</button>
+        <button onclick="showRaffleSelector()" class="secondary">Cancel</button>
+    </section>
+
+    <!-- Main Raffle Content -->
+    <div id="raffle-content" style="display: none;">
+        <button class="back-btn" onclick="showRaffleSelector()">Back to Raffles</button>
+        <section class="raffle-header">
+            <h2 id="current-raffle-name"></h2>
+            <div class="raffle-info">
+                <p>Draw Date: <span id="draw-date-display"></span></p>
+                <p>Prize: <span id="prize-display"></span></p>
+                <p>Ticket Cost: <span id="ticket-cost-display"></span></p>
+            </div>
+            <button onclick="showRaffleSelector()" class="secondary">Change Raffle</button>
+        </section>
+
+        <!-- Existing buyer form and sections -->
+        <section>
+            <h2>Add Buyer</h2>
+            <div class="buyer-form">
+                <input id="name" placeholder="Name" required>
+                <input id="surname" placeholder="Surname" required>
+                <input id="mobile" placeholder="Mobile">
+                <input id="email" type="email" placeholder="Email" required>
+                <input id="tickets" type="number" min="1" placeholder="Number of tickets" required>
+                <input id="purchaseDate" type="date" required>
+                <button onclick="addBuyer()">Add Buyer</button>
+            </div>
+        </section>
+
+        <section>
+            <h2>All Buyers</h2>
+            <div id="buyers"></div>
+        </section>
+
+        <section>
+            <h2>Draw Winner</h2>
+            <button onclick="drawWinner()">Draw Winner</button>
+            <div id="winner"></div>
+        </section>
+    </div>
+</body>
+</html>

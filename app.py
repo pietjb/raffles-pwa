@@ -1,0 +1,448 @@
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS  # Add this import
+import json
+import os
+import random
+import logging
+import subprocess
+import qrcode
+from io import BytesIO
+import base64
+
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
+app.logger.setLevel(logging.DEBUG)  # Set logging level to DEBUG for more detailed logs
+
+RAFFLES_FILE = 'raffle_data.json'
+BUYERS_FILE = 'buyers.json'
+
+def load_raffles():
+    try:
+        if not os.path.exists(RAFFLES_FILE):
+            save_raffles({"raffles": [], "current_raffle": None})
+            return {"raffles": [], "current_raffle": None}
+        with open(RAFFLES_FILE, 'r') as f:
+            data = json.load(f)
+            # Ensure the data has the correct structure
+            if not isinstance(data, dict):
+                data = {"raffles": [], "current_raffle": None}
+            if "raffles" not in data:
+                data["raffles"] = []
+            if "current_raffle" not in data:
+                data["current_raffle"] = None
+            return data
+    except Exception as e:
+        app.logger.error(f"Error loading raffles: {str(e)}")
+        return {"raffles": [], "current_raffle": None}
+
+def save_raffles(data):
+    try:
+        with open(RAFFLES_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        app.logger.error(f"Error saving raffles: {str(e)}")
+        raise
+
+def load_buyers(raffle_id):
+    try:
+        if not os.path.exists(BUYERS_FILE):
+            save_buyers({})
+            return []
+            
+        with open(BUYERS_FILE, 'r') as f:
+            buyers_data = json.load(f)
+            return buyers_data.get(str(raffle_id), [])
+    except json.JSONDecodeError:
+        # If file is empty or invalid, initialize it
+        save_buyers({})
+        return []
+    except Exception as e:
+        app.logger.error(f"Error loading buyers: {str(e)}")
+        return []
+
+def save_buyers(data):
+    try:
+        with open(BUYERS_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        app.logger.error(f"Error saving buyers: {str(e)}")
+        raise
+
+@app.route('/')
+def home():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/api/raffles', methods=['GET'])
+def get_raffles():
+    try:
+        data = load_raffles()
+        return jsonify(data['raffles'])
+    except Exception as e:
+        app.logger.error(f"Error getting raffles: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/raffles', methods=['POST'])
+def create_raffle():
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Content-Type must be application/json"}), 400
+        
+        data = request.get_json()
+        required_fields = ['name', 'drawDate', 'prize', 'ticketCost', 'paymentLink']
+        if not all(k in data for k in required_fields):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        raffles_data = load_raffles()
+        
+        new_raffle = {
+            'id': str(len(raffles_data['raffles']) + 1),
+            'name': data['name'],
+            'drawDate': data['drawDate'],
+            'prize': data['prize'],
+            'ticketCost': float(data['ticketCost']),
+            'paymentLink': data['paymentLink']
+        }
+        
+        raffles_data['raffles'].append(new_raffle)
+        save_raffles(raffles_data)
+        
+        return jsonify(new_raffle), 201
+    except Exception as e:
+        app.logger.error(f"Error creating raffle: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/raffles/<raffle_id>', methods=['GET'])
+def get_raffle(raffle_id):
+    try:
+        app.logger.debug(f"Loading raffle with ID: {raffle_id}")
+        raffles_data = load_raffles()
+        
+        if not raffles_data or 'raffles' not in raffles_data:
+            app.logger.error("No raffles data found")
+            return jsonify({"error": "No raffles data available"}), 404
+            
+        app.logger.debug(f"Found {len(raffles_data['raffles'])} raffles")
+        raffle = next((r for r in raffles_data['raffles'] if str(r['id']) == str(raffle_id)), None)
+        
+        if raffle is None:
+            app.logger.error(f"Raffle with ID {raffle_id} not found")
+            return jsonify({"error": "Raffle not found"}), 404
+            
+        app.logger.debug(f"Successfully found raffle: {raffle['name']}")
+        return jsonify(raffle)
+        
+    except Exception as e:
+        app.logger.error(f"Error getting raffle {raffle_id}: {str(e)}")
+        return jsonify({"error": f"Failed to load raffle: {str(e)}"}), 500
+
+@app.route('/api/buyers/<raffle_id>', methods=['GET'])
+def get_buyers(raffle_id):
+    try:
+        buyers = load_buyers(raffle_id)
+        return jsonify(buyers)
+    except Exception as e:
+        app.logger.error(f"Error getting buyers: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/buyers/<raffle_id>', methods=['POST'])
+def add_buyer(raffle_id):
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Content-Type must be application/json"}), 400
+
+        data = request.json
+        all_buyers = json.load(open(BUYERS_FILE, 'r')) if os.path.exists(BUYERS_FILE) else {}
+        buyers = all_buyers.get(str(raffle_id), [])
+        
+        # Generate buyer number
+        buyer_number = len(buyers) + 1
+        data["buyerNumber"] = buyer_number
+        
+        # Generate unique ticket numbers
+        existing_tickets = []
+        for buyer in buyers:
+            existing_tickets.extend(buyer.get("ticket_numbers", []))
+        
+        new_tickets = []
+        tickets_needed = data["tickets"]
+        while len(new_tickets) < tickets_needed:
+            ticket_num = random.randint(100000, 999999)
+            if ticket_num not in existing_tickets and ticket_num not in new_tickets:
+                new_tickets.append(ticket_num)
+        
+        data["ticket_numbers"] = new_tickets
+        buyers.append(data)
+        
+        all_buyers[str(raffle_id)] = buyers
+        save_buyers(all_buyers)
+        
+        return jsonify({"message": "Buyer added successfully", "buyer": data})
+    except Exception as e:
+        app.logger.error(f"Error adding buyer: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/draw/<raffle_id>', methods=['POST'])
+def draw_winner(raffle_id):
+    try:
+        buyers = load_buyers(raffle_id)
+        if not buyers:
+            return jsonify({"error": "No tickets available for draw"}), 400
+
+        tickets = []
+        for buyer in buyers:
+            for ticket in buyer["ticket_numbers"]:
+                tickets.append({
+                    "number": ticket,
+                    "name": f"{buyer['name']} {buyer['surname']}"
+                })
+
+        winner = random.choice(tickets)
+        winner_text = f"Winner: Ticket #{str(winner['number']).zfill(6)} - {winner['name']}"
+
+        # Save the winner in the raffle data
+        raffles_data = load_raffles()
+        for raffle in raffles_data['raffles']:
+            if raffle['id'] == raffle_id:
+                raffle['winner'] = winner_text
+                raffle['drawn'] = True
+                break
+        save_raffles(raffles_data)
+
+        return jsonify({"winner": winner_text})
+    except Exception as e:
+        app.logger.error(f"Error drawing winner: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/raffles/<raffle_id>', methods=['DELETE'])
+def delete_raffle(raffle_id):
+    try:
+        # Load raffles
+        raffles_data = load_raffles()
+        
+        # Find and remove the raffle
+        raffles_data['raffles'] = [r for r in raffles_data['raffles'] if r['id'] != raffle_id]
+        save_raffles(raffles_data)
+        
+        # Remove associated buyers
+        if os.path.exists(BUYERS_FILE):
+            with open(BUYERS_FILE, 'r') as f:
+                buyers_data = json.load(f)
+            
+            if str(raffle_id) in buyers_data:
+                del buyers_data[str(raffle_id)]
+                save_buyers(buyers_data)
+        
+        return jsonify({"message": "Raffle deleted successfully"}), 200
+    except Exception as e:
+        app.logger.error(f"Error deleting raffle {raffle_id}: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/buyers/<raffle_id>/<buyer_number>', methods=['DELETE'])
+def delete_buyer(raffle_id, buyer_number):
+    try:
+        # Load all buyers data
+        if not os.path.exists(BUYERS_FILE):
+            return jsonify({"error": "No buyers found"}), 404
+            
+        with open(BUYERS_FILE, 'r') as f:
+            buyers_data = json.load(f)
+        
+        # Get buyers for this raffle
+        raffle_buyers = buyers_data.get(str(raffle_id), [])
+        
+        # Find and remove buyer with matching number
+        buyer_number = int(buyer_number)  # Convert to integer for comparison
+        updated_buyers = [b for b in raffle_buyers if b.get('buyerNumber') != buyer_number]
+        
+        if len(updated_buyers) == len(raffle_buyers):
+            return jsonify({"error": f"Buyer #{buyer_number} not found"}), 404
+            
+        # Update the buyers data
+        buyers_data[str(raffle_id)] = updated_buyers
+        
+        # Save updated data
+        with open(BUYERS_FILE, 'w') as f:
+            json.dump(buyers_data, f, indent=2)
+        
+        return jsonify({"message": f"Buyer #{buyer_number} deleted successfully"}), 200
+        
+    except Exception as e:
+        app.logger.error(f"Error deleting buyer: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/buyers/<raffle_id>/<buyer_number>', methods=['GET'])
+def get_buyer(raffle_id, buyer_number):
+    try:
+        buyers = load_buyers(raffle_id)
+        buyer_number = int(buyer_number)  # Convert to integer for comparison
+        buyer = next((b for b in buyers if b.get('buyerNumber') == buyer_number), None)
+        
+        if not buyer:
+            return jsonify({"error": f"Buyer #{buyer_number} not found"}), 404
+            
+        return jsonify(buyer)
+    except Exception as e:
+        app.logger.error(f"Error getting buyer: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/open-chrome', methods=['POST'])
+def open_chrome():
+    try:
+        data = request.get_json()
+        url = data.get('url')
+        if not url:
+            return jsonify({"error": "URL is required"}), 400
+            
+        # Use direct path to Chrome and proper command formatting
+        chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
+        if not os.path.exists(chrome_path):
+            chrome_path = r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe'
+        
+        if not os.path.exists(chrome_path):
+            return jsonify({"error": "Chrome not found"}), 404
+
+        subprocess.Popen([chrome_path, '--new-window', url])
+        return jsonify({"message": "Chrome launched successfully"}), 200
+    except Exception as e:
+        app.logger.error(f"Error launching Chrome: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/winners/<raffle_id>', methods=['GET'])
+def get_winner_details(raffle_id):
+    try:
+        # Load raffle data to get winning ticket
+        raffles_data = load_raffles()
+        raffle = next((r for r in raffles_data['raffles'] if r['id'] == raffle_id), None)
+        
+        if not raffle or not raffle.get('winner'):
+            return jsonify({"error": "No winner found for this raffle"}), 404
+            
+        # Extract ticket number from winner string
+        ticket_number = int(raffle['winner'].split('#')[1].split(' ')[0])
+        
+        # Load buyers to find winner details
+        buyers = load_buyers(raffle_id)
+        winner = next(
+            (buyer for buyer in buyers 
+             if ticket_number in buyer['ticket_numbers']),
+            None
+        )
+        
+        if not winner:
+            return jsonify({"error": "Winner details not found"}), 404
+            
+        return jsonify({
+            "name": winner['name'],
+            "surname": winner['surname'],
+            "email": winner['email'],
+            "mobile": winner.get('mobile'),
+            "ticket": ticket_number
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting winner details: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/buyers/<raffle_id>/<buyer_number>/payment', methods=['POST'])
+def update_payment_status(raffle_id, buyer_number):
+    try:
+        data = request.get_json()
+        if 'paymentReceived' not in data:
+            return jsonify({"error": "Payment status required"}), 400
+
+        with open(BUYERS_FILE, 'r') as f:
+            buyers_data = json.load(f)
+
+        raffle_buyers = buyers_data.get(str(raffle_id), [])
+        buyer_number = int(buyer_number)
+        
+        for buyer in raffle_buyers:
+            if buyer.get('buyerNumber') == buyer_number:
+                buyer['paymentReceived'] = data['paymentReceived']
+                break
+
+        buyers_data[str(raffle_id)] = raffle_buyers
+        
+        with open(BUYERS_FILE, 'w') as f:
+            json.dump(buyers_data, f, indent=2)
+        
+        return jsonify({"message": "Payment status updated successfully"}), 200
+        
+    except Exception as e:
+        app.logger.error(f"Error updating payment status: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/payment-qr/<raffle_id>/<buyer_number>', methods=['GET'])
+def generate_payment_qr(raffle_id, buyer_number):
+    try:
+        # Get buyer and raffle details
+        buyers = load_buyers(raffle_id)
+        buyer = next((b for b in buyers if b.get('buyerNumber') == int(buyer_number)), None)
+        
+        if not buyer:
+            return jsonify({"error": "Buyer not found"}), 404
+            
+        raffles_data = load_raffles()
+        raffle = next((r for r in raffles_data['raffles'] if r['id'] == raffle_id), None)
+        
+        if not raffle:
+            return jsonify({"error": "Raffle not found"}), 404
+            
+        # Create payment info
+        total_amount = buyer['tickets'] * raffle['ticketCost']
+        reference = f"RAFFLE-{raffle_id}-{buyer['buyerNumber']}"
+        
+        # Add reference to payment link if it's a URL
+        payment_url = raffle.get('paymentLink', '')
+        
+        payment_info = (
+            f"Payment for {raffle['name']}\n"
+            f"Amount: R{total_amount:.2f}\n"
+            f"Reference: {reference}\n"
+            f"Link: {payment_url}"
+        )
+        
+        # Generate QR code with payment link
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(payment_url)
+        qr.make(fit=True)
+        
+        # Create image
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Convert to base64
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+        
+        return jsonify({
+            "qr_code": img_str,
+            "payment_info": payment_info,
+            "payment_url": payment_url
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error generating QR code: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+# Add these routes to serve PWA files
+@app.route('/manifest.json')
+def serve_manifest():
+    return send_from_directory('.', 'manifest.json')
+
+@app.route('/sw.js')
+def serve_sw():
+    response = send_from_directory('.', 'sw.js')
+    response.headers['Service-Worker-Allowed'] = '/'
+    return response
+
+@app.route('/style.css')
+def serve_css():
+    return send_from_directory('.', 'style.css')
+
+@app.route('/script.js')
+def serve_js():
+    return send_from_directory('.', 'script.js')
+
+if __name__ == '__main__':
+    app.run(debug=True)
