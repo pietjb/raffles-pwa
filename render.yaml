@@ -3,7 +3,12 @@ services:
     name: raffles-pwa
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: python app.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.3
+      - key: FLASK_APP
+        value: app.py
+      - key: FLASK_ENV
+        value: production
+    staticPublishPath: .
