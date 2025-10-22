@@ -2,25 +2,55 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2c5282">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Multi-Raffle System</title>
     
-    <!-- Update paths to root folder -->
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Raffles">
     <meta name="description" content="A system to manage multiple raffles and their tickets">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f7fa">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2c5282">
     
-    <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png">
-    <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512x512.png">
+    <!-- Android Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
     
     <link rel="stylesheet" href="/style.css">
     <script src="/script.js" defer></script>
+
+    <!-- PWA Install Prompt Handler -->
+    <script>
+        let deferredPrompt;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('PWA install prompt available');
+            
+            // Show custom install button if needed
+            const installBtn = document.createElement('button');
+            installBtn.textContent = 'Install App';
+            installBtn.classList.add('install-button');
+            installBtn.style.display = 'none';  // Hide by default
+            document.body.appendChild(installBtn);
+            
+            installBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User response to install prompt: ${outcome}`);
+                    deferredPrompt = null;
+                    installBtn.style.display = 'none';
+                }
+            });
+        });
+
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('App was installed');
+        });
+    </script>
 </head>
 <body>
     <h1>🎟 Multi-Raffle System</h1>
