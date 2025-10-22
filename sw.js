@@ -1,6 +1,7 @@
 const CACHE_NAME = 'raffle-system-v1';
 const ASSETS_TO_CACHE = [
   '/',
+  '/config.js',
   '/style.css',
   '/script.js',
   '/manifest.json',

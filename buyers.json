@@ -6,40 +6,11 @@
       "mobile": "0833061687",
       "email": "pjkoch@gmail.com",
       "tickets": 1,
-      "purchaseDate": "2025-10-20",
-      "paymentReceived": false,
-      "ticket_numbers": [
-        438370
-      ],
-      "buyerNumber": 1
-    },
-    {
-      "name": "Anine",
-      "surname": "Koch",
-      "mobile": "44564654",
-      "email": "aninekoch@gmail.com",
-      "tickets": 2,
-      "purchaseDate": "2025-10-20",
-      "paymentReceived": false,
-      "buyerNumber": 2,
-      "ticket_numbers": [
-        688291,
-        354876
-      ]
-    }
-  ],
-  "2": [
-    {
-      "name": "Anine",
-      "surname": "Koch",
-      "mobile": "083354654",
-      "email": "pjkoch@gmail.com",
-      "tickets": 1,
-      "purchaseDate": "2025-10-20",
+      "purchaseDate": "2025-10-22",
       "paymentReceived": false,
       "buyerNumber": 1,
       "ticket_numbers": [
-        164603
+        452967
       ]
     }
   ]

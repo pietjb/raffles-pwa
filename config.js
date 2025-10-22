@@ -1,5 +1,7 @@
-const CONFIG = {
-    API_URL: window.location.hostname === 'localhost' 
-        ? 'http://localhost:5000'
-        : 'https://your-backend-server.com', // Replace with your actual backend server URL
+// Define CONFIG as a global variable
+window.CONFIG = {
+    baseUrl: window.location.origin  // This will work for both local and production
 };
+
+console.log('CONFIG initialized in config.js:', window.CONFIG);
+console.log('Base URL set to:', window.CONFIG.baseUrl);

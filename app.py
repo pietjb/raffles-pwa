@@ -84,13 +84,20 @@ def get_raffles():
 @app.route('/api/raffles', methods=['POST'])
 def create_raffle():
     try:
+        app.logger.info("Received POST request to /api/raffles")
+        
         if not request.is_json:
+            app.logger.error("Request is not JSON")
             return jsonify({"error": "Content-Type must be application/json"}), 400
         
         data = request.get_json()
+        app.logger.info(f"Request data: {data}")
+        
         required_fields = ['name', 'drawDate', 'prize', 'ticketCost', 'paymentLink']
         if not all(k in data for k in required_fields):
-            return jsonify({"error": "Missing required fields"}), 400
+            missing = [k for k in required_fields if k not in data]
+            app.logger.error(f"Missing required fields: {missing}")
+            return jsonify({"error": f"Missing required fields: {missing}"}), 400
 
         raffles_data = load_raffles()
         
@@ -106,7 +113,9 @@ def create_raffle():
         raffles_data['raffles'].append(new_raffle)
         save_raffles(raffles_data)
         
+        app.logger.info(f"Raffle created successfully: {new_raffle}")
         return jsonify(new_raffle), 201
+        
     except Exception as e:
         app.logger.error(f"Error creating raffle: {str(e)}")
         return jsonify({"error": str(e)}), 500
@@ -447,6 +456,10 @@ def serve_js():
 @app.route('/icons/<path:filename>')
 def serve_icon(filename):
     return send_from_directory('icons', filename)
+
+@app.route('/config.js')
+def serve_config():
+    return send_from_directory('.', 'config.js')
 
 if __name__ == '__main__':
     app.run(debug=True)

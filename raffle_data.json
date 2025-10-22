@@ -6,16 +6,6 @@
       "drawDate": "2025-11-30",
       "prize": "Photo shoot of 2 hours by Anine Koch Photography",
       "ticketCost": 100.0,
-      "paymentLink": "https://aninekochphoto.mypixieset.com/",
-      "winner": "Winner: Ticket #559214 - Pieter Koch",
-      "drawn": true
-    },
-    {
-      "id": "2",
-      "name": "Raffle no 2",
-      "drawDate": "2025-11-30",
-      "prize": "Big prize",
-      "ticketCost": 100.0,
       "paymentLink": "https://aninekochphoto.mypixieset.com/"
     }
   ],

@@ -1,6 +1,10 @@
-const CONFIG = {
-    apiBase: '' // Empty string for same-origin requests
-};
+// Remove the CONFIG definition comments and add verification
+console.log('Checking CONFIG availability:', typeof CONFIG !== 'undefined' ? 'Available' : 'Not Available');
+console.log('CONFIG object:', window.CONFIG || CONFIG);
+
+// Use window.CONFIG as fallback
+const APP_CONFIG = window.CONFIG || CONFIG || { baseUrl: window.location.origin };
+console.log('Using APP_CONFIG:', APP_CONFIG);
 
 window.onerror = function(msg, url, lineNo, columnNo, error) {
     console.error('Error: ', msg, '\nURL: ', url, '\nLine: ', lineNo, '\nColumn: ', columnNo, '\nError object: ', error);
@@ -49,7 +53,7 @@ let currentRaffle = null;
 
 async function loadRaffles() {
     try {
-        const res = await fetch(`${CONFIG.apiBase}/api/raffles`);
+        const res = await fetch(`${APP_CONFIG.baseUrl}/api/raffles`);  // Simplified
         const raffles = await res.json();
         const raffleList = document.getElementById("raffle-list");
         
@@ -153,11 +157,17 @@ async function createRaffle() {
     }
 
     try {
-        const res = await fetch(`${CONFIG.API_URL}/api/raffles`, {
+        // Use APP_CONFIG instead of CONFIG
+        console.log('APP_CONFIG:', APP_CONFIG);
+        console.log('Using base URL:', APP_CONFIG.baseUrl);
+        
+        const url = `${APP_CONFIG.baseUrl}/api/raffles`;
+        console.log('Fetching URL:', url);
+        
+        const res = await fetch(url, {
             method: "POST",
             headers: { 
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({ 
                 name, 
@@ -168,12 +178,28 @@ async function createRaffle() {
             })
         });
 
-        if (!res.ok) throw new Error("Failed to create raffle");
+        console.log('Response status:', res.status);
+
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || "Failed to create raffle");
+        }
         
+        const result = await res.json();
+        console.log('Raffle created:', result);
+        
+        // Clear form
+        document.getElementById("raffle-name").value = "";
+        document.getElementById("draw-date").value = "";
+        document.getElementById("prize").value = "";
+        document.getElementById("ticket-cost").value = "";
+        document.getElementById("payment-link").value = "";
+        
+        await loadRaffles();
         showRaffleSelector();
     } catch (error) {
         console.error('Error creating raffle:', error);
-        alert("Failed to create raffle. Make sure the backend server is running.");
+        alert(`Failed to create raffle: ${error.message}`);
     }
 }
 
@@ -276,26 +302,40 @@ async function loadBuyers() {
 
 async function requestPayment(buyerNumber, ticketCount) {
     try {
-        // Get buyer and raffle details
+        // Get buyer details
         const buyerRes = await fetch(`/api/buyers/${currentRaffle}/${buyerNumber}`);
         if (!buyerRes.ok) {
-            const error = await buyerRes.json();
-            throw new Error(error.error || 'Failed to fetch buyer details');
+            throw new Error('Buyer not found');
         }
         const buyer = await buyerRes.json();
+        console.log('Buyer details:', buyer); // Debug log
+        
+        // Extract initial and surname from buyer name
+        const nameParts = buyer.name.trim().split(' ').filter(Boolean);
+        const initial = nameParts[0].charAt(0);
+        const surname = nameParts[nameParts.length - 1];
+        const paymentReference = `${initial}${surname}`.toUpperCase();
+        
+        console.log('Generated payment reference:', paymentReference); // Debug log
 
-        const raffleRes = await fetch(`/api/raffles/${currentRaffle}`);
+        // Get raffle details
+        const raffleRes = await fetch(`/api/raffles`);
         if (!raffleRes.ok) {
-            const error = await raffleRes.json();
-            throw new Error(error.error || 'Failed to fetch raffle details');
+            throw new Error('Failed to fetch raffle details');
         }
-        const raffle = await raffleRes.json();
+        const raffles = await raffleRes.json();
+        const raffle = raffles.find(r => r.id === currentRaffle);
+
+        if (!raffle) {
+            throw new Error('Raffle not found');
+        }
 
         const totalAmount = (ticketCount * raffle.ticketCost).toFixed(2);
-        
-        // Create email content
-        const emailSubject = `Payment Request: ${raffle.name} Raffle Tickets`;
-        const emailBody = `Dear ${buyer.name},
+
+        const params = new URLSearchParams({
+            to: buyer.email,
+            subject: `${raffle.name} - Payment Request for Raffle Tickets`,
+            body: `Dear ${buyer.name},
 
 Thank you for purchasing tickets for the ${raffle.name} raffle.
 
@@ -304,31 +344,21 @@ Payment Details:
 - Cost per Ticket: R${raffle.ticketCost.toFixed(2)}
 - Total Amount: R${totalAmount}
 
-Please use the following payment link to complete your purchase:
-${raffle.paymentLink}
+Click below to make your payment:
+<a href="${raffle.paymentLink}">${raffle.paymentLink}</a>
 
-Payment Reference: RAFFLE-${currentRaffle}-${buyer.name.toUpperCase()}
+Payment Reference: ${paymentReference}
 
 Best regards,
-Raffle Team`;
-
-        // Create Gmail URL
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(buyer.email)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-
-        // Open Chrome with Gmail
-        const response = await fetch('/api/open-chrome', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: gmailUrl })
+Raffle Team`,
+            html: true
         });
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to open email client');
-        }
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&${params.toString()}`;
+        window.open(gmailUrl, '_blank');
 
     } catch (error) {
-        console.error('Error requesting payment:', error);
+        console.error('Error in requestPayment:', error);
         alert('Failed to send payment request: ' + error.message);
     }
 }
@@ -643,7 +673,7 @@ async function showPaymentOptions(buyerNumber, tickets) {
                 <button onclick="showQRCode(${buyerNumber}, ${tickets})">
                     Scan QR Code
                 </button>
-                <button onclick="requestPayment(${buyerNumber}, ${tickets}); this.closest('.payment-modal').remove();">
+                <button onclick="sendEmailPayment(${buyerNumber}, ${tickets})">
                     Send Email Link
                 </button>
             </div>
@@ -651,6 +681,22 @@ async function showPaymentOptions(buyerNumber, tickets) {
         </div>
     `;
     document.body.appendChild(modal);
+}
+
+// Add this new function to handle email payment
+async function sendEmailPayment(buyerNumber, tickets) {
+    console.log('sendEmailPayment called with:', { buyerNumber, tickets });
+    
+    // Remove modal first
+    const modal = document.querySelector('.payment-modal');
+    if (modal) {
+        modal.remove();
+    }
+    
+    // Call requestPayment with a slight delay to ensure modal is gone
+    setTimeout(() => {
+        requestPayment(buyerNumber, tickets);
+    }, 100);
 }
 
 async function showQRCode(buyerNumber, tickets) {
