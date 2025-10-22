@@ -706,12 +706,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Register Service Worker
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/static/sw.js')
+        navigator.serviceWorker.register('/sw.js')
             .then(registration => {
-                console.log('ServiceWorker registration successful');
+                console.log('ServiceWorker registration successful:', registration.scope);
             })
             .catch(err => {
-                console.log('ServiceWorker registration failed: ', err);
+                console.error('ServiceWorker registration failed:', err);
             });
     }
 });

@@ -4,18 +4,21 @@
   "description": "A system to manage multiple raffles and their tickets",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#f5f7fa",
   "theme_color": "#2c5282",
   "icons": [
     {
-      "src": "/static/icons/icon-192x192.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/static/icons/icon-512x512.png",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

@@ -444,5 +444,9 @@ def serve_css():
 def serve_js():
     return send_from_directory('.', 'script.js')
 
+@app.route('/icons/<path:filename>')
+def serve_icon(filename):
+    return send_from_directory('icons', filename)
+
 if __name__ == '__main__':
     app.run(debug=True)
