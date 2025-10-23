@@ -308,15 +308,12 @@ async function requestPayment(buyerNumber, ticketCount) {
             throw new Error('Buyer not found');
         }
         const buyer = await buyerRes.json();
-        console.log('Buyer details:', buyer); // Debug log
         
         // Extract initial and surname from buyer name
         const nameParts = buyer.name.trim().split(' ').filter(Boolean);
         const initial = nameParts[0].charAt(0);
         const surname = nameParts[nameParts.length - 1];
         const paymentReference = `${initial}${surname}`.toUpperCase();
-        
-        console.log('Generated payment reference:', paymentReference); // Debug log
 
         // Get raffle details
         const raffleRes = await fetch(`/api/raffles`);
@@ -332,10 +329,9 @@ async function requestPayment(buyerNumber, ticketCount) {
 
         const totalAmount = (ticketCount * raffle.ticketCost).toFixed(2);
 
-        const params = new URLSearchParams({
-            to: buyer.email,
-            subject: `${raffle.name} - Payment Request for Raffle Tickets`,
-            body: `Dear ${buyer.name},
+        // Create email content
+        const emailSubject = `${raffle.name} - Payment Request for Raffle Tickets`;
+        const emailBody = `Dear ${buyer.name},
 
 Thank you for purchasing tickets for the ${raffle.name} raffle.
 
@@ -345,17 +341,31 @@ Payment Details:
 - Total Amount: R${totalAmount}
 
 Click below to make your payment:
-<a href="${raffle.paymentLink}">${raffle.paymentLink}</a>
+${raffle.paymentLink}
 
 Payment Reference: ${paymentReference}
 
 Best regards,
-Raffle Team`,
-            html: true
-        });
+Raffle Team`;
 
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&${params.toString()}`;
-        window.open(gmailUrl, '_blank');
+        // Detect if device is mobile
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            // For mobile devices, use mailto to open native Gmail app
+            const mailtoLink = `mailto:${buyer.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+            window.location.href = mailtoLink;
+        } else {
+            // For desktop, open Gmail in browser
+            const params = new URLSearchParams({
+                to: buyer.email,
+                su: emailSubject,
+                body: emailBody
+            });
+
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&${params.toString()}`;
+            window.open(gmailUrl, '_blank');
+        }
 
     } catch (error) {
         console.error('Error in requestPayment:', error);
