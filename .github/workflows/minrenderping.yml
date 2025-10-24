@@ -1,15 +1,29 @@
-# Simulated daily request to your render project so that the service doesn't go down
-name: Min render ping
+# GitHub Action: Keep Render service awake by pinging every 10 minutes
+name: Keep Render Awake
 
 on:
   schedule:
-    - cron: '*/10 * * * *'  # Runs daily at midnight UTC
-  workflow_dispatch:  # Allows manual triggering
+    - cron: '*/10 * * * *'  # Runs every 10 minutes (UTC)
+  workflow_dispatch:  # Allows manual triggering from GitHub UI
 
 jobs:
-  curl-website:
+  ping-render:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Run cURL on Website
-        run: curl -I https://raffle-pwa.onrender.com
+      - name: Check connectivity to Render app
+        run: |
+          echo "🔍 Pinging Render app at $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          
+          # Send HEAD request to your app
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://raffle-pwa.onrender.com)
+
+          echo "Response code: $RESPONSE"
+
+          # Check for success
+          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 400 ]; then
+            echo "✅ Render app is up and responding (HTTP $RESPONSE)"
+          else
+            echo "❌ Render app might be down or unresponsive (HTTP $RESPONSE)"
+            exit 1  # Fail the job so you can see it in the Actions log
+          fi
