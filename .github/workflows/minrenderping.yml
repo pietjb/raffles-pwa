@@ -4,53 +4,27 @@ name: Keep Render Awake
 on:
   schedule:
     - cron: '*/10 * * * *'  # Runs every 10 minutes (UTC)
-  workflow_dispatch:        # Allows manual triggering from GitHub UI
-
-concurrency:
-  group: ping-render
-  cancel-in-progress: true
-
-env:
-  RENDER_URL: https://raffle-pwa.onrender.com
+  workflow_dispatch:  # Allows manual triggering from GitHub UI
 
 jobs:
   ping-render:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Create workspace for logs
-        run: mkdir -p $GITHUB_WORKSPACE/logs
-
-      - name: Ping Render app and write log
-        id: ping
+      - name: Check connectivity to Render app
         run: |
-          LOG_FILE="$GITHUB_WORKSPACE/logs/ping-render.log"
-          TIMESTAMP="$(date -u +"%Y-%m-%d %H:%M:%S UTC")"
-          echo "🔍 Ping attempt at $TIMESTAMP" | tee -a "$LOG_FILE"
+          echo "🔍 Pinging Render app at $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          
+          # Send HEAD request to your app
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://raffle-pwa.onrender.com)
 
-          # Use curl to get HTTP status and total time. Retries and timeout included.
-          # Format: "<http_code> <time_total>"
-          RESULT=$(curl -s -o /dev/null -w "%{http_code} %{time_total}" --max-time 15 --retry 3 --retry-delay 2 "$RENDER_URL")
-          HTTP_CODE=$(echo "$RESULT" | awk '{print $1}')
-          TIME_TOTAL=$(echo "$RESULT" | awk '{print $2}')
+          echo "Response code: $RESPONSE"
 
-          echo "Target: $RENDER_URL" | tee -a "$LOG_FILE"
-          echo "Response: HTTP $HTTP_CODE | Time: ${TIME_TOTAL}s" | tee -a "$LOG_FILE"
-
-          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 400 ]; then
-            echo "✅ Render app is up (HTTP $HTTP_CODE)" | tee -a "$LOG_FILE"
-            echo "::set-output name=success::true"
-            exit 0
+          # Check for success
+          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 400 ]; then
+            echo "✅ Render app is up and responding (HTTP $RESPONSE)"
           else
-            echo "❌ Render app might be down or unresponsive (HTTP $HTTP_CODE)" | tee -a "$LOG_FILE"
-            echo "::set-output name=success::false"
-            exit 1
+            echo "❌ Render app might be down or unresponsive (HTTP $RESPONSE)"
+            exit 1  # Fail the job so you can see it in the Actions log
           fi
-        shell: bash
 
-      - name: Upload ping log artifact
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ping-render-log
-          path: logs/ping-render.log
