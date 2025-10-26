@@ -252,6 +252,119 @@ def get_raffle(raffle_id):
         app.logger.error(f"Error getting raffle {raffle_id}: {str(e)}")
         return jsonify({"error": f"Failed to load raffle: {str(e)}"}), 500
 
+@app.route('/api/raffles/<raffle_id>', methods=['PUT'])
+def update_raffle(raffle_id):
+    try:
+        app.logger.info(f"Updating raffle with ID: {raffle_id}")
+        
+        # Get form data
+        name = request.form.get('name')
+        draw_date = request.form.get('drawDate')
+        prize = request.form.get('prize')
+        ticket_cost = request.form.get('ticketCost')
+        payment_link = request.form.get('paymentLink')
+        banking_details_json = request.form.get('bankingDetails')
+        
+        app.logger.info(f"Form data: name={name}, drawDate={draw_date}, prize={prize}")
+        
+        if not all([name, draw_date, prize, ticket_cost, payment_link]):
+            missing = [f for f, v in [("name", name), ("drawDate", draw_date), ("prize", prize), 
+                                     ("ticketCost", ticket_cost), ("paymentLink", payment_link)] if not v]
+            app.logger.error(f"Missing required fields: {missing}")
+            return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
+        
+        # Load raffles data
+        data = load_raffles()
+        
+        # Find the raffle to update
+        raffle_index = None
+        existing_raffle = None
+        for i, r in enumerate(data['raffles']):
+            if str(r['id']) == str(raffle_id):
+                raffle_index = i
+                existing_raffle = r
+                break
+        
+        if raffle_index is None:
+            app.logger.error(f"Raffle with ID {raffle_id} not found")
+            return jsonify({"error": "Raffle not found"}), 404
+        
+        # Handle image upload
+        image_filename = existing_raffle.get('image')  # Keep existing image by default
+        thumbnail_filename = existing_raffle.get('thumbnail')  # Keep existing thumbnail by default
+        
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename and allowed_file(file.filename):
+                # Delete old images if they exist
+                if image_filename:
+                    old_image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+                    if os.path.exists(old_image_path):
+                        os.remove(old_image_path)
+                        app.logger.info(f"Deleted old image: {image_filename}")
+                
+                if thumbnail_filename:
+                    old_thumbnail_path = os.path.join(app.config['THUMBNAIL_FOLDER'], thumbnail_filename)
+                    if os.path.exists(old_thumbnail_path):
+                        os.remove(old_thumbnail_path)
+                        app.logger.info(f"Deleted old thumbnail: {thumbnail_filename}")
+                
+                # Create unique filename with raffle ID
+                ext = file.filename.rsplit('.', 1)[1].lower()
+                image_filename = f"raffle_{raffle_id}.{ext}"
+                thumbnail_filename = f"raffle_{raffle_id}_thumb.jpg"
+                
+                # Save new image
+                image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+                file.save(image_path)
+                app.logger.info(f"Image saved: {image_filename}")
+                
+                # Create thumbnail
+                thumbnail_path = os.path.join(app.config['THUMBNAIL_FOLDER'], thumbnail_filename)
+                if create_thumbnail(image_path, thumbnail_path):
+                    app.logger.info(f"Thumbnail created: {thumbnail_filename}")
+                else:
+                    thumbnail_filename = None
+        
+        # Parse banking details if provided
+        banking_details = None
+        if banking_details_json:
+            try:
+                banking_details = json.loads(banking_details_json)
+            except json.JSONDecodeError:
+                app.logger.warning("Failed to parse banking details JSON")
+        
+        # Update raffle data
+        updated_raffle = {
+            'id': raffle_id,
+            'name': name,
+            'drawDate': draw_date,
+            'prize': prize,
+            'ticketCost': float(ticket_cost),
+            'paymentLink': payment_link,
+            'drawn': existing_raffle.get('drawn', False),  # Preserve drawn status
+            'winner': existing_raffle.get('winner')  # Preserve winner if exists
+        }
+        
+        if image_filename:
+            updated_raffle['image'] = image_filename
+            if thumbnail_filename:
+                updated_raffle['thumbnail'] = thumbnail_filename
+        
+        if banking_details:
+            updated_raffle['bankingDetails'] = banking_details
+        
+        # Replace the raffle in the list
+        data['raffles'][raffle_index] = updated_raffle
+        save_raffles(data)
+        
+        app.logger.info(f"Raffle updated successfully: {updated_raffle}")
+        return jsonify(updated_raffle), 200
+        
+    except Exception as e:
+        app.logger.error(f"Error updating raffle: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/buyers/<raffle_id>', methods=['GET'])
 def get_buyers(raffle_id):
     try:

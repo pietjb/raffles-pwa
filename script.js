@@ -199,33 +199,66 @@ async function loadRaffles() {
         const raffleList = document.getElementById("raffle-list");
         
         if (!Array.isArray(raffles) || raffles.length === 0) {
-            raffleList.innerHTML = "<p>No raffles available</p>";
+            raffleList.innerHTML = '<div class="empty-state"><p>📋 No raffles available</p><p class="empty-hint">Create your first raffle to get started</p></div>';
             return;
         }
         
-        raffleList.innerHTML = raffles.map(raffle => `
-            <div class="raffle-card">
-                ${raffle.thumbnail ? `<div class="raffle-image"><img src="/uploads/thumbnails/${raffle.thumbnail}" alt="${raffle.name}" onclick="selectRaffle('${raffle.id}')"></div>` : (raffle.image ? `<div class="raffle-image"><img src="/uploads/${raffle.image}" alt="${raffle.name}" onclick="selectRaffle('${raffle.id}')"></div>` : '')}
-                <div class="raffle-card-header">
-                    <div onclick="selectRaffle('${raffle.id}')">
-                        <h3>${raffle.name}</h3>
-                        <div class="raffle-info">
-                            <p>Draw Date: ${new Date(raffle.drawDate).toLocaleDateString()}</p>
-                            <p>Prize: ${raffle.prize}</p>
-                            <p>Ticket Cost: R${raffle.ticketCost.toFixed(2)}</p>
+        raffleList.innerHTML = raffles.map(raffle => {
+            const drawDate = new Date(raffle.drawDate);
+            const today = new Date();
+            const daysUntil = Math.ceil((drawDate - today) / (1000 * 60 * 60 * 24));
+            const isUpcoming = daysUntil > 0;
+            
+            return `
+            <div class="raffle-card ${!isUpcoming ? 'raffle-expired' : ''}">
+                ${raffle.thumbnail || raffle.image ? `
+                <div class="raffle-image">
+                    <img src="/uploads/${raffle.thumbnail ? 'thumbnails/' + raffle.thumbnail : raffle.image}" 
+                         alt="${raffle.name}" 
+                         onclick="selectRaffle('${raffle.id}')">
+                    ${!isUpcoming ? '<div class="raffle-badge expired-badge">Closed</div>' : 
+                      (daysUntil <= 3 ? '<div class="raffle-badge urgent-badge">Ending Soon</div>' : '')}
+                </div>` : ''}
+                <div class="raffle-card-content">
+                    <div class="raffle-card-header" onclick="selectRaffle('${raffle.id}')">
+                        <h3 class="raffle-title">${raffle.name}</h3>
+                        ${isUpcoming ? `<span class="days-remaining">${daysUntil} day${daysUntil !== 1 ? 's' : ''} left</span>` : '<span class="days-remaining expired">Draw date passed</span>'}
+                    </div>
+                    <div class="raffle-details" onclick="selectRaffle('${raffle.id}')">
+                        <div class="detail-item">
+                            <span class="detail-icon">📅</span>
+                            <div class="detail-content">
+                                <span class="detail-label">Draw Date</span>
+                                <span class="detail-value">${drawDate.toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-icon">🎁</span>
+                            <div class="detail-content">
+                                <span class="detail-label">Prize</span>
+                                <span class="detail-value">${raffle.prize}</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-icon">💰</span>
+                            <div class="detail-content">
+                                <span class="detail-label">Ticket Cost</span>
+                                <span class="detail-value">R${raffle.ticketCost.toFixed(2)}</span>
+                            </div>
                         </div>
                     </div>
                     <div class="raffle-actions">
-                        <button class="close-btn" onclick="closeRaffle('${raffle.id}')">Close Raffle</button>
+                        <button class="btn-select" onclick="selectRaffle('${raffle.id}')">Select Raffle</button>
+                        <button class="btn-close" onclick="event.stopPropagation(); closeRaffle('${raffle.id}')">Close</button>
                     </div>
                 </div>
             </div>
-        `).join("");
+        `}).join("");
     } catch (error) {
         console.error('Error:', error);
         document.getElementById("raffle-list").innerHTML = `
             <div class="error-message">
-                Error loading raffles. Please try refreshing the page.
+                ⚠️ Error loading raffles. Please try refreshing the page.
             </div>`;
     }
 }
@@ -277,9 +310,29 @@ async function deleteRaffle(raffleId) {
 function showNewRaffleForm() {
     document.getElementById("raffle-selector").style.display = "none";
     document.getElementById("new-raffle-form").style.display = "block";
+    
+    // Reset form title and button for creating new raffle
+    document.querySelector('#new-raffle-form h2').textContent = 'Create New Raffle';
+    const submitButton = document.querySelector('#new-raffle-form .btn-primary');
+    submitButton.textContent = 'Create Raffle';
+    submitButton.setAttribute('onclick', 'createRaffle()');
+    
+    // Clear all form fields
+    document.getElementById('raffle-name').value = '';
+    document.getElementById('draw-date').value = '';
+    document.getElementById('prize').value = '';
+    document.getElementById('ticket-cost').value = '10';
+    document.getElementById('payment-link').value = '';
+    document.getElementById('raffle-image').value = '';
+    
     // Reset banking details section
     document.getElementById("banking-required").checked = false;
     document.getElementById("banking-details-section").style.display = "none";
+    document.getElementById("account-owner").value = "";
+    document.getElementById("bank-name").value = "";
+    document.getElementById("branch-code").value = "";
+    document.getElementById("account-number").value = "";
+    document.getElementById("account-type").value = "";
 }
 
 function toggleBankingDetails(isRequired) {
@@ -412,10 +465,28 @@ async function selectRaffle(raffleId) {
         console.log('Loaded raffle:', raffle); // Debug log
         
         currentRaffle = raffleId;
+        
+        // Store current raffle data for editing
+        window.currentRaffleData = raffle;
+        
+        // Update header
         document.getElementById("current-raffle-name").textContent = raffle.name;
-        document.getElementById("draw-date-display").textContent = new Date(raffle.drawDate).toLocaleDateString();
+        document.getElementById("raffle-id-badge").textContent = `ID: ${raffle.id}`;
+        document.getElementById("draw-date-display").textContent = new Date(raffle.drawDate).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' });
         document.getElementById("prize-display").textContent = raffle.prize;
         document.getElementById("ticket-cost-display").textContent = `R${raffle.ticketCost.toFixed(2)}`;
+        
+        // Display thumbnail/image if available
+        const headerImageContainer = document.getElementById('raffle-header-image');
+        const headerImg = document.getElementById('raffle-header-img');
+        if (raffle.thumbnail || raffle.image) {
+            const imagePath = raffle.thumbnail ? `/uploads/thumbnails/${raffle.thumbnail}` : `/uploads/${raffle.image}`;
+            headerImg.src = imagePath;
+            headerImg.alt = raffle.name;
+            headerImageContainer.style.display = 'block';
+        } else {
+            headerImageContainer.style.display = 'none';
+        }
         
         // Display previous winner if exists
         const winnerElement = document.getElementById("winner");
@@ -442,6 +513,137 @@ async function selectRaffle(raffleId) {
     }
 }
 
+function editRaffle() {
+    if (!window.currentRaffleData) {
+        alert('No raffle data available');
+        return;
+    }
+    
+    const raffle = window.currentRaffleData;
+    
+    // Change form title and button text to indicate editing
+    document.querySelector('#new-raffle-form h2').textContent = 'Edit Raffle';
+    const submitButton = document.querySelector('#new-raffle-form .btn-primary');
+    submitButton.textContent = 'Update Raffle';
+    submitButton.setAttribute('onclick', 'updateRaffle()');
+    
+    // Populate the form with current raffle data
+    document.getElementById('raffle-name').value = raffle.name;
+    document.getElementById('draw-date').value = raffle.drawDate;
+    document.getElementById('prize').value = raffle.prize;
+    document.getElementById('ticket-cost').value = raffle.ticketCost;
+    document.getElementById('payment-link').value = raffle.paymentLink || '';
+    
+    // Note: Image cannot be repopulated in file input for security reasons
+    // User would need to re-upload if they want to change it
+    
+    // Handle banking details if they exist
+    if (raffle.bankingDetails) {
+        document.getElementById('banking-required').checked = true;
+        toggleBankingDetails(true);
+        document.getElementById('account-owner').value = raffle.bankingDetails.accountOwner || '';
+        document.getElementById('bank-name').value = raffle.bankingDetails.bankName || '';
+        document.getElementById('branch-code').value = raffle.bankingDetails.branchCode || '';
+        document.getElementById('account-number').value = raffle.bankingDetails.accountNumber || '';
+        document.getElementById('account-type').value = raffle.bankingDetails.accountType || '';
+    } else {
+        document.getElementById('banking-required').checked = false;
+        toggleBankingDetails(false);
+    }
+    
+    // Show the form
+    document.getElementById("raffle-selector").style.display = "none";
+    document.getElementById("raffle-content").style.display = "none";
+    document.getElementById("new-raffle-form").style.display = "block";
+}
+
+async function updateRaffle() {
+    if (!window.currentRaffleData || !currentRaffle) {
+        alert('No raffle data available for update');
+        return;
+    }
+    
+    const name = document.getElementById("raffle-name").value;
+    const drawDate = document.getElementById("draw-date").value;
+    const prize = document.getElementById("prize").value;
+    const ticketCost = parseFloat(document.getElementById("ticket-cost").value);
+    const paymentLink = document.getElementById("payment-link").value;
+    const bankingRequired = document.getElementById("banking-required").checked;
+    const imageFile = document.getElementById("raffle-image").files[0];
+
+    // Validate basic fields
+    if (!name || !drawDate || !prize || !ticketCost || !paymentLink) {
+        alert("Please fill all required fields");
+        return;
+    }
+
+    // Build FormData for file upload
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('drawDate', drawDate);
+    formData.append('prize', prize);
+    formData.append('ticketCost', ticketCost);
+    formData.append('paymentLink', paymentLink);
+
+    // If banking is required, validate and include banking details
+    if (bankingRequired) {
+        const accountOwner = document.getElementById("account-owner").value;
+        const bankName = document.getElementById("bank-name").value;
+        const branchCode = document.getElementById("branch-code").value;
+        const accountNumber = document.getElementById("account-number").value;
+        const accountType = document.getElementById("account-type").value;
+
+        if (!accountOwner || !bankName || !branchCode || !accountNumber || !accountType) {
+            alert("Please fill all banking details fields");
+            return;
+        }
+
+        formData.append('bankingDetails', JSON.stringify({
+            accountOwner,
+            bankName,
+            branchCode,
+            accountNumber,
+            accountType
+        }));
+    }
+
+    // Add image if selected (optional on update)
+    if (imageFile) {
+        formData.append('image', imageFile);
+    }
+
+    try {
+        const url = `${APP_CONFIG.baseUrl}/api/raffles/${currentRaffle}`;
+        console.log('Updating raffle at:', url);
+        
+        const res = await fetch(url, {
+            method: "PUT",
+            body: formData
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || "Failed to update raffle");
+        }
+        
+        const result = await res.json();
+        console.log('Raffle updated:', result);
+        
+        alert('Raffle updated successfully!');
+        
+        // Hide form and show raffle content
+        document.getElementById("new-raffle-form").style.display = "none";
+        document.getElementById("raffle-content").style.display = "block";
+        
+        // Reload the raffle to show updated data
+        await selectRaffle(currentRaffle);
+        
+    } catch (error) {
+        console.error('Error updating raffle:', error);
+        alert(`Failed to update raffle: ${error.message}`);
+    }
+}
+
 async function loadBuyers() {
     if (!currentRaffle) return;
 
@@ -451,48 +653,122 @@ async function loadBuyers() {
         const div = document.getElementById("buyers");
         
         if (!Array.isArray(buyers) || buyers.length === 0) {
-            div.innerHTML = "<p>No buyers registered yet.</p>";
+            div.innerHTML = '<div class="empty-state"><p>📋 No buyers registered yet</p><p class="empty-hint">Add your first buyer to get started</p></div>';
             return;
         }
         
         const totalTickets = buyers.reduce((sum, b) => sum + b.tickets, 0);
+        const totalPaid = buyers.filter(b => b.paymentReceived).reduce((sum, b) => sum + b.tickets, 0);
         
         div.innerHTML = `
-            <div class="ticket-summary">
-                <strong>Total Tickets: ${totalTickets}</strong>
-            </div>
-            ${buyers.map(b => `
-                <div class="ticket-entry" data-buyer-number="${b.buyerNumber}">
-                    <div class="buyer-number">Buyer #${b.buyerNumber}</div>
-                    <div class="ticket-info">
-                        <strong>${b.name} ${b.surname}</strong> - ${b.tickets} tickets<br>
-                        Purchased: ${new Date(b.purchaseDate).toLocaleDateString()}<br>
-                        Tickets: ${b.ticket_numbers.map(n => `#${n.toString().padStart(6, '0')}`).join(", ")}
+            <div class="buyer-summary">
+                <div class="summary-card">
+                    <span class="summary-icon">🎟️</span>
+                    <div class="summary-content">
+                        <span class="summary-value">${totalTickets}</span>
+                        <span class="summary-label">Total Tickets</span>
                     </div>
-                    <div class="ticket-actions">
-                        <div class="payment-status">
-                            <label>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-icon">👥</span>
+                    <div class="summary-content">
+                        <span class="summary-value">${buyers.length}</span>
+                        <span class="summary-label">Buyers</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-icon">✅</span>
+                    <div class="summary-content">
+                        <span class="summary-value">${totalPaid}/${totalTickets}</span>
+                        <span class="summary-label">Paid</span>
+                    </div>
+                </div>
+            </div>
+            <div class="buyers-list">
+                ${buyers.map(b => {
+                    const purchaseDate = new Date(b.purchaseDate);
+                    return `
+                    <div class="buyer-card ${b.paymentReceived ? 'paid' : 'unpaid'}">
+                        <div class="buyer-card-header">
+                            <div class="buyer-identity">
+                                <div class="buyer-avatar">${b.name.charAt(0)}${b.surname.charAt(0)}</div>
+                                <div class="buyer-name-section">
+                                    <h4 class="buyer-name">${b.name} ${b.surname}</h4>
+                                    <span class="buyer-number">Buyer #${b.buyerNumber}</span>
+                                </div>
+                            </div>
+                            <div class="payment-badge ${b.paymentReceived ? 'paid-badge' : 'pending-badge'}">
+                                ${b.paymentReceived ? '✓ Paid' : '⏱ Pending'}
+                            </div>
+                        </div>
+                        
+                        <div class="buyer-details-grid">
+                            <div class="buyer-detail-item">
+                                <span class="buyer-detail-icon">📧</span>
+                                <div class="buyer-detail-content">
+                                    <span class="buyer-detail-label">Email</span>
+                                    <span class="buyer-detail-value">${b.email}</span>
+                                </div>
+                            </div>
+                            ${b.mobile ? `
+                            <div class="buyer-detail-item">
+                                <span class="buyer-detail-icon">📱</span>
+                                <div class="buyer-detail-content">
+                                    <span class="buyer-detail-label">Mobile</span>
+                                    <span class="buyer-detail-value">${b.mobile}</span>
+                                </div>
+                            </div>
+                            ` : ''}
+                            <div class="buyer-detail-item">
+                                <span class="buyer-detail-icon">🎟️</span>
+                                <div class="buyer-detail-content">
+                                    <span class="buyer-detail-label">Tickets</span>
+                                    <span class="buyer-detail-value">${b.tickets} ticket${b.tickets !== 1 ? 's' : ''}</span>
+                                </div>
+                            </div>
+                            <div class="buyer-detail-item">
+                                <span class="buyer-detail-icon">📅</span>
+                                <div class="buyer-detail-content">
+                                    <span class="buyer-detail-label">Purchased</span>
+                                    <span class="buyer-detail-value">${purchaseDate.toLocaleDateString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="ticket-numbers-section">
+                            <span class="ticket-numbers-label">Ticket Numbers:</span>
+                            <div class="ticket-numbers">
+                                ${b.ticket_numbers.map(n => `<span class="ticket-number-chip">#${n.toString().padStart(6, '0')}</span>`).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="buyer-actions">
+                            <label class="payment-checkbox">
                                 <input type="checkbox" 
                                     data-buyer-number="${b.buyerNumber}"
                                     ${b.paymentReceived ? 'checked' : ''} 
                                     onchange="togglePaymentStatus(${b.buyerNumber}, this.checked)">
-                                Payment Received
+                                <span>Mark as Paid</span>
                             </label>
+                            <div class="buyer-action-buttons">
+                                <button class="btn-request" 
+                                    onclick="showPaymentOptions(${b.buyerNumber}, ${b.tickets})"
+                                    ${b.paymentReceived ? 'disabled' : ''}>
+                                    💳 Request Payment
+                                </button>
+                                <button class="btn-delete" onclick="deleteBuyer(${b.buyerNumber})">
+                                    🗑️ Delete
+                                </button>
+                            </div>
                         </div>
-                        <button class="ticket-delete-btn" onclick="deleteBuyer(${b.buyerNumber})">Delete</button>
-                        <button class="payment-request-btn" 
-                            onclick="showPaymentOptions(${b.buyerNumber}, ${b.tickets})"
-                            ${b.paymentReceived ? 'disabled' : ''}>
-                            Request Payment
-                        </button>
                     </div>
-                </div>`
-            ).join("")}`;
+                `}).join('')}
+            </div>`;
     } catch (error) {
         console.error('Error:', error);
         document.getElementById("buyers").innerHTML = `
             <div class="error-message">
-                Error loading buyers. Please try refreshing the page.
+                ⚠️ Error loading buyers. Please try refreshing the page.
             </div>`;
     }
 }
@@ -619,14 +895,8 @@ async function togglePaymentStatus(buyerNumber, paid) {
             throw new Error(error.error || 'Failed to update payment status');
         }
 
-        // Find and update the payment request button
-        const buyerEntry = document.querySelector(`[data-buyer-number="${buyerNumber}"]`);
-        if (buyerEntry) {
-            const paymentBtn = buyerEntry.querySelector('.payment-request-btn');
-            if (paymentBtn) {
-                paymentBtn.disabled = paid;
-            }
-        }
+        // Reload the buyers list to update UI including summary stats
+        await loadBuyers();
 
     } catch (error) {
         console.error('Error updating payment status:', error);
@@ -906,19 +1176,40 @@ async function showPaymentOptions(buyerNumber, tickets) {
     modal.className = 'payment-modal';
     modal.innerHTML = `
         <div class="payment-modal-content">
-            <h3>Payment Options</h3>
+            <div class="modal-header">
+                <div class="modal-icon">💳</div>
+                <h3>Choose Payment Method</h3>
+                <p class="modal-subtitle">Select how you want to request payment</p>
+            </div>
             <div class="payment-options">
-                <button onclick="showQRCode(${buyerNumber}, ${tickets})">
-                    Scan QR code for Link (Capitec only)
+                <button class="payment-option-btn qr-option" onclick="showQRCode(${buyerNumber}, ${tickets})">
+                    <div class="option-icon">📱</div>
+                    <div class="option-content">
+                        <div class="option-title">QR Code</div>
+                        <div class="option-description">Scan to open Capitec payment link</div>
+                    </div>
+                    <div class="option-arrow">→</div>
                 </button>
-                <button onclick="sendEmailPayment(${buyerNumber}, ${tickets})">
-                    Send payment request via email
+                <button class="payment-option-btn email-option" onclick="sendEmailPayment(${buyerNumber}, ${tickets})">
+                    <div class="option-icon">📧</div>
+                    <div class="option-content">
+                        <div class="option-title">Email Request</div>
+                        <div class="option-description">Send payment details via email</div>
+                    </div>
+                    <div class="option-arrow">→</div>
                 </button>
             </div>
-            <button class="close-btn" onclick="this.closest('.payment-modal').remove()">Cancel</button>
+            <button class="modal-cancel-btn" onclick="this.closest('.payment-modal').remove()">Cancel</button>
         </div>
     `;
     document.body.appendChild(modal);
+    
+    // Add click outside to close
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
 }
 
 // Add this new function to handle email payment
@@ -950,21 +1241,42 @@ async function showQRCode(buyerNumber, tickets) {
         qrModal.className = 'qr-modal';
         qrModal.innerHTML = `
             <div class="qr-modal-content">
-                <h3>Scan QR Code for payment link (Capitec accounts only)</h3>
-                <img src="data:image/png;base64,${data.qr_code}" alt="Payment QR Code">
-                <div class="payment-info">
+                <div class="modal-header">
+                    <div class="modal-icon qr-icon">📱</div>
+                    <h3>Scan QR Code</h3>
+                    <p class="modal-subtitle">For Capitec account holders only</p>
+                </div>
+                <div class="qr-code-container">
+                    <img src="data:image/png;base64,${data.qr_code}" alt="Payment QR Code">
+                </div>
+                <div class="payment-info-card">
+                    <div class="info-label">Payment Information</div>
                     <pre>${data.payment_info}</pre>
                 </div>
-                <div class="payment-actions">
-                    <button onclick="window.open('${data.payment_url}', '_blank')">Open Payment Link</button>
-                    <button onclick="this.closest('.qr-modal').remove()">Close</button>
+                <div class="modal-actions">
+                    <button class="btn-open-link" onclick="window.open('${data.payment_url}', '_blank')">
+                        🔗 Open Payment Link
+                    </button>
+                    <button class="btn-modal-close" onclick="this.closest('.qr-modal').remove()">
+                        Close
+                    </button>
                 </div>
             </div>
         `;
         document.body.appendChild(qrModal);
         
         // Remove the payment options modal
-        document.querySelector('.payment-modal').remove();
+        const paymentModal = document.querySelector('.payment-modal');
+        if (paymentModal) {
+            paymentModal.remove();
+        }
+        
+        // Add click outside to close
+        qrModal.addEventListener('click', (e) => {
+            if (e.target === qrModal) {
+                qrModal.remove();
+            }
+        });
         
     } catch (error) {
         console.error('Error showing QR code:', error);

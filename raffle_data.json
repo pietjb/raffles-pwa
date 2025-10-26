@@ -37,6 +37,25 @@
         "accountType": "Savings"
       },
       "thumbnail": "raffle_2_thumb.jpg"
+    },
+    {
+      "id": "3",
+      "name": "Sample Raffle",
+      "drawDate": "2025-12-03",
+      "prize": "This is just a sample",
+      "ticketCost": 100.0,
+      "paymentLink": "www.google.co.za",
+      "drawn": true,
+      "winner": "Winner: Ticket #278122 - J Soap",
+      "image": "raffle_3.jpg",
+      "thumbnail": "raffle_3_thumb.jpg",
+      "bankingDetails": {
+        "accountOwner": "J Soap",
+        "bankName": "The bank",
+        "branchCode": "123456",
+        "accountNumber": "1234567",
+        "accountType": "Cheque"
+      }
     }
   ],
   "current_raffle": null

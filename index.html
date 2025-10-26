@@ -199,20 +199,56 @@
 
         <!-- Raffle Content Section -->
         <div id="raffle-content" style="display: none;">
-            <button class="back-btn" onclick="showRaffleSelector()">Back to Raffles</button>
-            <section class="raffle-header">
-                <h2 id="current-raffle-name"></h2>
-                <div class="raffle-info">
-                    <p>Draw Date: <span id="draw-date-display"></span></p>
-                    <p>Prize: <span id="prize-display"></span></p>
-                    <p>Ticket Cost: <span id="ticket-cost-display"></span></p>
+            <button class="back-btn" onclick="showRaffleSelector()">← Back to Raffles</button>
+            <section class="raffle-header-card">
+                <div class="raffle-header-content">
+                    <div id="raffle-header-image" class="raffle-header-image" style="display: none;">
+                        <img id="raffle-header-img" src="" alt="Raffle">
+                    </div>
+                    <div class="raffle-header-left">
+                        <div class="raffle-header-title">
+                            <h2 id="current-raffle-name"></h2>
+                            <span class="raffle-id-badge" id="raffle-id-badge"></span>
+                        </div>
+                        <div class="raffle-details-grid">
+                            <div class="raffle-detail-item">
+                                <span class="detail-icon">📅</span>
+                                <div class="detail-content">
+                                    <span class="detail-label">Draw Date</span>
+                                    <span class="detail-value" id="draw-date-display"></span>
+                                </div>
+                            </div>
+                            <div class="raffle-detail-item">
+                                <span class="detail-icon">🎁</span>
+                                <div class="detail-content">
+                                    <span class="detail-label">Prize</span>
+                                    <span class="detail-value" id="prize-display"></span>
+                                </div>
+                            </div>
+                            <div class="raffle-detail-item">
+                                <span class="detail-icon">💰</span>
+                                <div class="detail-content">
+                                    <span class="detail-label">Ticket Cost</span>
+                                    <span class="detail-value" id="ticket-cost-display"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="raffle-header-actions">
+                        <button onclick="editRaffle()" class="btn-edit">✏️ Edit Raffle</button>
+                    </div>
                 </div>
-                <button onclick="showRaffleSelector()" class="secondary">Change Raffle</button>
             </section>
 
-            <!-- Existing buyer form and sections -->
-            <section>
-                <h2>Add Buyer</h2>
+            <!-- Add Buyer Section -->
+            <section class="add-buyer-card">
+                <div class="section-header">
+                    <div class="section-header-icon">👥</div>
+                    <div>
+                        <h2>Add New Buyer</h2>
+                        <p class="section-subtitle">Register a new participant for this raffle</p>
+                    </div>
+                </div>
                 <div class="buyer-form">
                     <div class="form-section">
                         <h3 class="form-section-title">Buyer Information</h3>
@@ -254,20 +290,34 @@
                     </div>
                     
                     <div class="form-actions">
-                        <button onclick="addBuyer()" class="btn-primary">Add Buyer</button>
+                        <button onclick="addBuyer()" class="btn-primary">➕ Add Buyer</button>
                     </div>
                 </div>
             </section>
 
-            <section>
-                <h2>All Buyers</h2>
+            <section class="buyers-section">
+                <div class="section-header">
+                    <div class="section-header-icon">📋</div>
+                    <div>
+                        <h2>All Buyers</h2>
+                        <p class="section-subtitle">Manage registered participants and their tickets</p>
+                    </div>
+                </div>
                 <div id="buyers"></div>
             </section>
 
-            <section>
-                <h2>Draw Winner</h2>
-                <button onclick="drawWinner()">Draw Winner</button>
-                <div id="winner"></div>
+            <section class="draw-winner-card">
+                <div class="section-header">
+                    <div class="section-header-icon">🎲</div>
+                    <div>
+                        <h2>Draw Winner</h2>
+                        <p class="section-subtitle">Randomly select a winning ticket from all entries</p>
+                    </div>
+                </div>
+                <div class="draw-content">
+                    <button onclick="drawWinner()" class="btn-draw">🎯 Draw Winner</button>
+                    <div id="winner"></div>
+                </div>
             </section>
         </div>
     </div>
