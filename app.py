@@ -8,13 +8,27 @@ import subprocess
 import qrcode
 from io import BytesIO
 import base64
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 app.logger.setLevel(logging.DEBUG)  # Set logging level to DEBUG for more detailed logs
 
+# Configure upload folder
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
 RAFFLES_FILE = 'raffle_data.json'
 BUYERS_FILE = 'buyers.json'
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def load_raffles():
     try:
@@ -68,6 +82,10 @@ def save_buyers(data):
         app.logger.error(f"Error saving buyers: {str(e)}")
         raise
 
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 @app.route('/')
 def home():
     response = send_from_directory('.', 'index.html')
@@ -90,33 +108,66 @@ def create_raffle():
     try:
         app.logger.info("Received POST request to /api/raffles")
         
-        if not request.is_json:
-            app.logger.error("Request is not JSON")
-            return jsonify({"error": "Content-Type must be application/json"}), 400
+        # Get form data instead of JSON
+        name = request.form.get('name')
+        draw_date = request.form.get('drawDate')
+        prize = request.form.get('prize')
+        ticket_cost = request.form.get('ticketCost')
+        payment_link = request.form.get('paymentLink')
+        banking_details_json = request.form.get('bankingDetails')
         
-        data = request.get_json()
-        app.logger.info(f"Request data: {data}")
+        app.logger.info(f"Form data: name={name}, drawDate={draw_date}, prize={prize}")
         
-        required_fields = ['name', 'drawDate', 'prize', 'ticketCost', 'paymentLink']
-        if not all(k in data for k in required_fields):
-            missing = [k for k in required_fields if k not in data]
+        if not all([name, draw_date, prize, ticket_cost, payment_link]):
+            missing = [f for f, v in [("name", name), ("drawDate", draw_date), ("prize", prize), 
+                                     ("ticketCost", ticket_cost), ("paymentLink", payment_link)] if not v]
             app.logger.error(f"Missing required fields: {missing}")
-            return jsonify({"error": f"Missing required fields: {missing}"}), 400
-
-        raffles_data = load_raffles()
+            return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
+        
+        data = load_raffles()
+        
+        # Generate new raffle ID
+        new_id = str(max([int(r['id']) for r in data['raffles']], default=0) + 1)
+        
+        # Handle image upload
+        image_filename = None
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename and allowed_file(file.filename):
+                # Create unique filename with raffle ID
+                ext = file.filename.rsplit('.', 1)[1].lower()
+                image_filename = f"raffle_{new_id}.{ext}"
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
+                app.logger.info(f"Image saved: {image_filename}")
+        
+        # Parse banking details if provided
+        banking_details = None
+        if banking_details_json:
+            try:
+                banking_details = json.loads(banking_details_json)
+            except json.JSONDecodeError:
+                app.logger.warning("Failed to parse banking details JSON")
         
         new_raffle = {
-            'id': str(len(raffles_data['raffles']) + 1),
-            'name': data['name'],
-            'drawDate': data['drawDate'],
-            'prize': data['prize'],
-            'ticketCost': float(data['ticketCost']),
-            'paymentLink': data['paymentLink'],
-            'bankingDetails': data.get('bankingDetails', {})
+            'id': new_id,
+            'name': name,
+            'drawDate': draw_date,
+            'prize': prize,
+            'ticketCost': float(ticket_cost),
+            'paymentLink': payment_link,
+            'drawn': False,
+            'winner': None
         }
         
-        raffles_data['raffles'].append(new_raffle)
-        save_raffles(raffles_data)
+        if image_filename:
+            new_raffle['image'] = image_filename
+        
+        if banking_details:
+            new_raffle['bankingDetails'] = banking_details
+        
+        # Add to raffles list
+        data['raffles'].append(new_raffle)
+        save_raffles(data)
         
         app.logger.info(f"Raffle created successfully: {new_raffle}")
         return jsonify(new_raffle), 201

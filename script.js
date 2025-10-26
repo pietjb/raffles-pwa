@@ -169,6 +169,7 @@ async function loadRaffles() {
         raffleList.innerHTML = raffles.map(raffle => `
             <div class="raffle-card">
                 <div class="raffle-card-header">
+                    ${raffle.image ? `<div class="raffle-image" onclick="selectRaffle('${raffle.id}')"><img src="/uploads/${raffle.image}" alt="${raffle.name}"></div>` : ''}
                     <div onclick="selectRaffle('${raffle.id}')">
                         <h3>${raffle.name}</h3>
                         <div class="raffle-info">
@@ -273,6 +274,7 @@ async function createRaffle() {
     const ticketCost = parseFloat(document.getElementById("ticket-cost").value);
     const paymentLink = document.getElementById("payment-link").value;
     const bankingRequired = document.getElementById("banking-required").checked;
+    const imageFile = document.getElementById("raffle-image").files[0];
 
     // Validate basic fields
     if (!name || !drawDate || !prize || !ticketCost || !paymentLink) {
@@ -280,14 +282,13 @@ async function createRaffle() {
         return;
     }
 
-    // Build request body
-    const raffleData = {
-        name, 
-        drawDate, 
-        prize,
-        ticketCost,
-        paymentLink
-    };
+    // Build FormData for file upload
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('drawDate', drawDate);
+    formData.append('prize', prize);
+    formData.append('ticketCost', ticketCost);
+    formData.append('paymentLink', paymentLink);
 
     // If banking is required, validate and include banking details
     if (bankingRequired) {
@@ -302,13 +303,18 @@ async function createRaffle() {
             return;
         }
 
-        raffleData.bankingDetails = {
+        formData.append('bankingDetails', JSON.stringify({
             accountOwner,
             bankName,
             branchCode,
             accountNumber,
             accountType
-        };
+        }));
+    }
+
+    // Add image if selected
+    if (imageFile) {
+        formData.append('image', imageFile);
     }
 
     try {
@@ -321,10 +327,7 @@ async function createRaffle() {
         
         const res = await fetch(url, {
             method: "POST",
-            headers: { 
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(raffleData)
+            body: formData  // Send FormData instead of JSON
         });
 
         console.log('Response status:', res.status);
@@ -343,6 +346,7 @@ async function createRaffle() {
         document.getElementById("prize").value = "";
         document.getElementById("ticket-cost").value = "";
         document.getElementById("payment-link").value = "";
+        document.getElementById("raffle-image").value = "";
         document.getElementById("banking-required").checked = false;
         document.getElementById("banking-details-section").style.display = "none";
         document.getElementById("account-owner").value = "";

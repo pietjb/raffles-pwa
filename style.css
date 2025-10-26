@@ -355,17 +355,32 @@ button[onclick="deleteBuyer"]:hover {
 }
 
 .raffle-card {
-    padding: 15px;
+    padding: 0;
     margin: 10px 0;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     cursor: pointer;
     transition: transform 0.2s;
+    overflow: hidden;
 }
 
 .raffle-card:hover {
     transform: translateX(5px);
+}
+
+.raffle-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background: #f5f7fa;
+}
+
+.raffle-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
 }
 
 .raffle-card-header {

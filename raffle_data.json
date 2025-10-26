@@ -1,4 +1,41 @@
 {
-  "raffles": [],
+  "raffles": [
+    {
+      "id": "1",
+      "name": "Nicolas Hockey CPT - 1/2 Lamb raffle",
+      "drawDate": "2025-12-03",
+      "prize": "Van Rensburg 1/2 lam vleis",
+      "ticketCost": 50.0,
+      "paymentLink": "https://pay.capitecbank.co.za/payme/G4427Y",
+      "drawn": false,
+      "winner": null,
+      "image": "raffle_1.jpg",
+      "bankingDetails": {
+        "accountOwner": "N Koch",
+        "bankName": "Capitec",
+        "branchCode": "470010",
+        "accountNumber": "2274137931",
+        "accountType": "Savings"
+      }
+    },
+    {
+      "id": "2",
+      "name": "Nicolas hokkie CPT - Photoshoot",
+      "drawDate": "2025-12-03",
+      "prize": "Privaat photoshoot van 1.5 ure ter waarde van R2000 deur Anine Koch Photography",
+      "ticketCost": 50.0,
+      "paymentLink": "https://pay.capitecbank.co.za/payme/G4427Y",
+      "drawn": false,
+      "winner": null,
+      "image": "raffle_2.jpg",
+      "bankingDetails": {
+        "accountOwner": "N Koch",
+        "bankName": "Capitec",
+        "branchCode": "470010",
+        "accountNumber": "2274137931",
+        "accountType": "Savings"
+      }
+    }
+  ],
   "current_raffle": null
 }

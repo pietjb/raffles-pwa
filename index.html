@@ -108,6 +108,12 @@
             <input id="payment-link" type="url" placeholder="Capitec Payment Link URL (for Capitec account holders only)" required>
             
             <div style="margin: 15px 0;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Raffle Advertisement Image (optional)</label>
+                <input id="raffle-image" type="file" accept="image/*" style="display: block;">
+                <small style="color: #666;">Upload an image to advertise your raffle</small>
+            </div>
+            
+            <div style="margin: 15px 0;">
                 <label>
                     <input type="checkbox" id="banking-required" onchange="toggleBankingDetails(this.checked)">
                     Banking details required
