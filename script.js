@@ -494,10 +494,16 @@ async function selectRaffle(raffleId) {
             winnerElement.innerHTML = `
                 <div class="winner-reveal">
                     <div class="winner-title">🎉 Draw Result 🎉</div>
-                    <div class="winner-text">${raffle.winner}</div>
-                    <button class="contact-winner-btn" onclick="showWinnerContact('${raffleId}')">
-                        Contact Winner
-                    </button>
+                    <div class="winner-announcement">We have a winner!</div>
+                    <div class="winner-ticket-display">
+                        <div class="winner-ticket-label">Winning Ticket</div>
+                        <div class="winner-text">${raffle.winner}</div>
+                    </div>
+                    <div class="winner-actions">
+                        <button class="contact-winner-btn" onclick="showWinnerDetails('${raffleId}')">
+                            👤 Winner Details
+                        </button>
+                    </div>
                 </div>`;
         } else {
             winnerElement.innerHTML = '';
@@ -945,32 +951,109 @@ async function drawWinner() {
     }
 
     try {
+        const drawStage = document.getElementById("draw-stage");
+        const narrativeElement = document.getElementById("draw-narrative");
         const winnerElement = document.getElementById("winner");
-        winnerElement.innerHTML = '<div class="ticket-cycler"><div class="ticket-number"></div></div>';
-        const cyclerElement = document.querySelector('.ticket-number');
+        const startButton = document.getElementById("btn-start-draw");
+        
+        // Clear previous results
+        winnerElement.innerHTML = '';
+        narrativeElement.innerHTML = '';
+        
+        // Disable button
+        startButton.disabled = true;
+        startButton.textContent = 'Drawing...';
 
-        // Get all tickets for animation
+        // Get all buyers
         const response = await fetch(`/api/buyers/${currentRaffle}`);
-        const buyers = await response.json();
-        const tickets = buyers.flatMap(buyer => 
-            buyer.ticket_numbers.map(number => ({
-                number: number.toString().padStart(6, '0'),
-                name: `${buyer.name} ${buyer.surname}`
-            }))
-        );
+        const allBuyers = await response.json();
 
-        if (tickets.length === 0) {
-            winnerElement.innerHTML = '<div class="error-message">No tickets available for draw</div>';
+        if (!Array.isArray(allBuyers) || allBuyers.length === 0) {
+            narrativeElement.innerHTML = '<div class="error-message">⚠️ No buyers registered for this raffle</div>';
+            startButton.disabled = false;
+            startButton.textContent = '🎯 Start the Draw';
             return;
         }
 
-        let speed = 30;
-        let cycleInterval;
-        
-        const cycleTickets = () => {
-            const randomTicket = tickets[Math.floor(Math.random() * tickets.length)];
-            cyclerElement.textContent = randomTicket.number;
-        };
+        // Separate paid and unpaid buyers
+        const paidBuyers = allBuyers.filter(buyer => buyer.paymentReceived === true);
+        const unpaidBuyers = allBuyers.filter(buyer => !buyer.paymentReceived);
+
+        // Check if there are unpaid buyers
+        if (unpaidBuyers.length > 0) {
+            const unpaidTickets = unpaidBuyers.reduce((sum, b) => sum + b.tickets, 0);
+            const totalTickets = allBuyers.reduce((sum, b) => sum + b.tickets, 0);
+            
+            const proceedWithDraw = confirm(
+                `⚠️ WARNING: Unpaid Tickets Detected!\n\n` +
+                `• ${unpaidBuyers.length} buyer(s) have not paid\n` +
+                `• ${unpaidTickets} unpaid ticket(s) out of ${totalTickets} total\n\n` +
+                `Only PAID tickets will be included in the draw.\n` +
+                `Unpaid buyers will be EXCLUDED.\n\n` +
+                `Do you want to proceed with the draw?`
+            );
+
+            if (!proceedWithDraw) {
+                startButton.disabled = false;
+                startButton.textContent = '🎯 Start the Draw';
+                return;
+            }
+        }
+
+        // Use only paid buyers for the draw
+        const buyers = paidBuyers;
+
+        if (buyers.length === 0) {
+            narrativeElement.innerHTML = '<div class="error-message">⚠️ No paid tickets available for draw. Please ensure buyers have paid before drawing.</div>';
+            startButton.disabled = false;
+            startButton.textContent = '🎯 Start the Draw';
+            return;
+        }
+
+        // Get tickets only from paid buyers
+        const tickets = buyers.flatMap(buyer => 
+            buyer.ticket_numbers.map(number => ({
+                number: number.toString().padStart(6, '0'),
+                name: `${buyer.name} ${buyer.surname}`,
+                buyerNumber: buyer.buyerNumber
+            }))
+        );
+
+        const totalTickets = tickets.length;
+        const totalBuyers = buyers.length;
+        const excludedBuyers = unpaidBuyers.length;
+
+        // Stage 1: Introduction with payment status
+        const introMessage = excludedBuyers > 0 
+            ? `<p>We have <strong>${totalTickets} paid tickets</strong> from <strong>${totalBuyers} paid participants</strong></p>
+               <p class="narrative-subtext" style="color: #e53e3e;">⚠️ ${excludedBuyers} unpaid buyer(s) excluded from draw</p>
+               <p class="narrative-subtext">Preparing the digital draw drum...</p>`
+            : `<p>We have <strong>${totalTickets} tickets</strong> from <strong>${totalBuyers} participants</strong></p>
+               <p class="narrative-subtext">All tickets are paid and eligible ✓</p>
+               <p class="narrative-subtext">Preparing the digital draw drum...</p>`;
+
+        await showNarrative(narrativeElement, `
+            <div class="narrative-stage stage-intro">
+                <div class="narrative-icon">🎪</div>
+                <h3>Welcome to the Draw!</h3>
+                ${introMessage}
+            </div>
+        `, 2500);
+
+        // Stage 2: Shuffle announcement
+        await showNarrative(narrativeElement, `
+            <div class="narrative-stage stage-shuffle">
+                <div class="narrative-icon">🔀</div>
+                <h3>Shuffling All Tickets</h3>
+                <p>Ensuring a fair and random selection...</p>
+                <div class="shuffle-loader">
+                    <div class="shuffle-bar"></div>
+                </div>
+            </div>
+        `, 2000);
+
+        // Stage 3: Countdown
+        await countdown(narrativeElement);
 
         // Draw winner from server
         const drawRes = await fetch(`/api/draw/${currentRaffle}`, {
@@ -984,116 +1067,338 @@ async function drawWinner() {
 
         const drawData = await drawRes.json();
         
-        // Start animation
-        cycleInterval = setInterval(cycleTickets, speed);
-        
-        setTimeout(async () => {
-            for (let i = 0; i < 20; i++) {
-                await new Promise(resolve => {
-                    clearInterval(cycleInterval);
-                    speed += 20;
-                    cycleInterval = setInterval(cycleTickets, speed);
-                    setTimeout(resolve, 200);
-                });
-            }
+        // Stage 4: Ticket cycling animation
+        await showNarrative(narrativeElement, `
+            <div class="narrative-stage stage-drawing">
+                <div class="narrative-icon">🎲</div>
+                <h3>Selecting the Winning Ticket...</h3>
+                <div class="ticket-drum">
+                    <div class="ticket-cycler">
+                        <div class="ticket-number" id="cycling-ticket"></div>
+                    </div>
+                </div>
+            </div>
+        `, 0);
 
-            clearInterval(cycleInterval);
-            
-            // Show winner
-            winnerElement.innerHTML = `
-                <div class="winner-reveal">
-                    <div class="winner-title">🎉 Winner! 🎉</div>
+        // Animate ticket cycling
+        await animateTicketCycle(tickets, drawData.winner);
+
+        // Stage 5: Drum roll before reveal
+        await showNarrative(narrativeElement, `
+            <div class="narrative-stage stage-drumroll">
+                <div class="narrative-icon pulse">🥁</div>
+                <h3 class="drumroll-text">And the winner is...</h3>
+                <div class="dots-loader">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        `, 2000);
+
+        // Stage 6: Winner reveal with celebration
+        narrativeElement.innerHTML = '';
+        winnerElement.innerHTML = `
+            <div class="winner-reveal winner-entrance">
+                <div class="celebration-burst">🎊</div>
+                <div class="winner-title">🎉 CONGRATULATIONS! 🎉</div>
+                <div class="winner-announcement">We have a winner!</div>
+                <div class="winner-ticket-display">
+                    <div class="winner-ticket-label">Winning Ticket</div>
                     <div class="winner-text">${drawData.winner}</div>
-                    <button class="contact-winner-btn" onclick="showWinnerContact('${currentRaffle}')">
-                        Contact Winner
+                </div>
+                <div class="winner-actions">
+                    <button class="contact-winner-btn" onclick="showWinnerDetails('${currentRaffle}')">
+                        � Winner Details
                     </button>
-                </div>`;
-            createConfetti();
-
-        }, 2000);
+                    <button class="celebrate-btn" onclick="celebrateAgain()">
+                        🎆 Celebrate Again!
+                    </button>
+                    <button class="redraw-btn" onclick="confirmRedraw()">
+                        🔄 Re-Draw Winner
+                    </button>
+                </div>
+            </div>`;
+        
+        createConfetti();
+        
+        // Re-enable button and update text
+        startButton.disabled = false;
+        startButton.textContent = '🎯 Draw Again';
 
     } catch (error) {
         console.error('Error drawing winner:', error);
-        document.getElementById("winner").innerHTML = `
+        const narrativeElement = document.getElementById("draw-narrative");
+        const startButton = document.getElementById("btn-start-draw");
+        
+        narrativeElement.innerHTML = `
             <div class="error-message">
-                Error drawing winner: ${error.message}
+                ❌ Error drawing winner: ${error.message}
             </div>`;
+        
+        startButton.disabled = false;
+        startButton.textContent = '🎯 Start the Draw';
     }
 }
 
-async function showWinnerContact(raffleId) {
-    try {
-        const [winnerRes, raffleRes] = await Promise.all([
-            fetch(`/api/winners/${raffleId}`),
-            fetch(`/api/raffles/${raffleId}`)
-        ]);
+function showNarrative(element, html, delay) {
+    return new Promise(resolve => {
+        element.innerHTML = html;
+        if (delay > 0) {
+            setTimeout(resolve, delay);
+        } else {
+            resolve();
+        }
+    });
+}
 
-        if (!winnerRes.ok || !raffleRes.ok) {
-            throw new Error('Failed to fetch winner details');
+function countdown(element) {
+    return new Promise(async (resolve) => {
+        for (let i = 3; i > 0; i--) {
+            element.innerHTML = `
+                <div class="narrative-stage stage-countdown">
+                    <div class="countdown-number">${i}</div>
+                    <p>Starting draw in...</p>
+                </div>
+            `;
+            await new Promise(r => setTimeout(r, 1000));
+        }
+        resolve();
+    });
+}
+
+function animateTicketCycle(tickets, winnerText) {
+    return new Promise((resolve) => {
+        const cyclerElement = document.getElementById('cycling-ticket');
+        if (!cyclerElement) {
+            resolve();
+            return;
+        }
+
+        let speed = 30;
+        let cycleInterval;
+        let iterations = 0;
+        const maxIterations = 100;
+        
+        const cycleTickets = () => {
+            const randomTicket = tickets[Math.floor(Math.random() * tickets.length)];
+            cyclerElement.textContent = randomTicket.number;
+            iterations++;
+            
+            // Gradually slow down
+            if (iterations > 60) {
+                clearInterval(cycleInterval);
+                speed += 15;
+                cycleInterval = setInterval(cycleTickets, speed);
+            }
+            
+            if (iterations >= maxIterations) {
+                clearInterval(cycleInterval);
+                resolve();
+            }
+        };
+        
+        cycleInterval = setInterval(cycleTickets, speed);
+    });
+}
+
+function celebrateAgain() {
+    createConfetti();
+    // Play celebration sound if available
+    const winnerReveal = document.querySelector('.winner-reveal');
+    if (winnerReveal) {
+        winnerReveal.classList.remove('winner-entrance');
+        setTimeout(() => {
+            winnerReveal.classList.add('winner-entrance');
+        }, 10);
+    }
+}
+
+function confirmRedraw() {
+    const confirmation = confirm(
+        '⚠️ Are you sure you want to re-draw the winner?\n\n' +
+        'This will select a NEW random winner from all PAID tickets.\n' +
+        'The current winner will be replaced.\n' +
+        'Unpaid buyers will be excluded from the re-draw.\n\n' +
+        'This action cannot be undone.'
+    );
+    
+    if (confirmation) {
+        // Clear current winner display
+        document.getElementById('winner').innerHTML = '';
+        document.getElementById('draw-narrative').innerHTML = '';
+        
+        // Re-enable the draw button
+        const startButton = document.getElementById('btn-start-draw');
+        startButton.disabled = false;
+        startButton.textContent = '🎯 Start the Draw';
+        
+        // Trigger new draw (which will check for unpaid buyers automatically)
+        drawWinner();
+    }
+}
+
+async function showWinnerDetails(raffleId) {
+    try {
+        // Get raffle and winner info
+        const raffleRes = await fetch(`/api/raffles/${raffleId}`);
+        if (!raffleRes.ok) {
+            throw new Error('Failed to fetch raffle details');
         }
         
-        const winner = await winnerRes.json();
         const raffle = await raffleRes.json();
+        
+        // Parse winner from raffle.winner string (format: "Winner: Ticket #123456 - Name Surname")
+        const winnerMatch = raffle.winner.match(/Ticket #(\d+) - (.+)/);
+        if (!winnerMatch) {
+            throw new Error('Invalid winner format');
+        }
+        
+        const winningTicket = winnerMatch[1];
+        const winnerName = winnerMatch[2];
+        
+        // Get buyers to find winner's contact details
+        const buyersRes = await fetch(`/api/buyers/${raffleId}`);
+        const buyers = await buyersRes.json();
+        
+        // Find the buyer with the winning ticket
+        const winner = buyers.find(buyer => 
+            buyer.ticket_numbers.includes(parseInt(winningTicket))
+        );
+        
+        if (!winner) {
+            throw new Error('Winner contact details not found');
+        }
         
         // Create email content
         const emailSubject = `${raffle.name} - Winner Announcement`;
-        const emailBody = `Dear ${winner.name},
-
-Congratulations! You are the winner of our ${raffle.name} raffle with your ticket #${winner.ticket.toString().padStart(6, '0')}.
-
-Your prize is: ${raffle.prize}
-
-Best regards,
-Raffle Team`;
-
-        // Create Gmail URL
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(winner.email)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-
-        // Function to open Chrome with Gmail
-        const openChromeWithGmail = async () => {
-            try {
-                const response = await fetch('/api/open-chrome', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: gmailUrl })
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to open Chrome');
-                }
-            } catch (error) {
-                console.error('Error opening Chrome:', error);
-                // Fallback to regular window.open
-                window.open(gmailUrl, '_blank');
-            }
-        };
-
-        // Create modal with winner details and email button
+        const emailBody = `Dear ${winner.name} ${winner.surname},\n\nCongratulations! You are the winner of our ${raffle.name} raffle with your ticket #${winningTicket}.\n\nYour prize is: ${raffle.prize}\n\nBest regards,\nRaffle Team`;
+        
+        // Create mailto link
+        const mailtoLink = `mailto:${winner.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        
+        // Create modal with winner details
         const modal = document.createElement('div');
-        modal.className = 'winner-modal';
+        modal.className = 'winner-details-modal';
         modal.innerHTML = `
-            <div class="winner-modal-content">
-                <h3>Winner Contact Details</h3>
-                <div class="winner-details">
-                    <p><strong>Name:</strong> ${winner.name} ${winner.surname}</p>
-                    <p><strong>Email:</strong> ${winner.email}</p>
-                    <p><strong>Mobile:</strong> ${winner.mobile || 'Not provided'}</p>
-                    <p><strong>Winning Ticket:</strong> #${winner.ticket.toString().padStart(6, '0')}</p>
-                </div>
-                <div class="winner-modal-actions">
-                    <button class="email-winner-btn" onclick="openChromeWithGmail()">
-                        Send Gmail in Chrome
+            <div class="modal-backdrop" onclick="this.parentElement.remove()"></div>
+            <div class="winner-details-card">
+                <div class="winner-details-header">
+                    <div class="winner-details-icon">🏆</div>
+                    <h2>Winner Details</h2>
+                    <button class="modal-close-btn" onclick="this.parentElement.parentElement.parentElement.remove()">
+                        ✕
                     </button>
-                    <button onclick="this.parentElement.parentElement.parentElement.remove()">Close</button>
+                </div>
+                
+                <div class="winner-details-body">
+                    <div class="winner-info-section">
+                        <div class="info-header">
+                            <span class="info-icon">👤</span>
+                            <h3>Personal Information</h3>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Full Name</span>
+                                <span class="info-value">${winner.name} ${winner.surname}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Email Address</span>
+                                <span class="info-value">
+                                    <a href="${mailtoLink}" class="email-link">${winner.email}</a>
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Mobile Number</span>
+                                <span class="info-value">
+                                    ${winner.mobile ? `<a href="tel:${winner.mobile}" class="phone-link">${winner.mobile}</a>` : '<span class="text-muted">Not provided</span>'}
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Buyer Number</span>
+                                <span class="info-value">#${winner.buyerNumber}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="winner-info-section">
+                        <div class="info-header">
+                            <span class="info-icon">🎟️</span>
+                            <h3>Ticket Information</h3>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Winning Ticket</span>
+                                <span class="info-value winning-ticket">#${winningTicket}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Total Tickets Purchased</span>
+                                <span class="info-value">${winner.tickets} ticket${winner.tickets > 1 ? 's' : ''}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Purchase Date</span>
+                                <span class="info-value">${new Date(winner.purchaseDate).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Payment Status</span>
+                                <span class="info-value">
+                                    <span class="status-badge ${winner.paymentReceived ? 'status-paid' : 'status-unpaid'}">
+                                        ${winner.paymentReceived ? '✓ Paid' : '⚠ Unpaid'}
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="winner-info-section">
+                        <div class="info-header">
+                            <span class="info-icon">🎁</span>
+                            <h3>Prize Information</h3>
+                        </div>
+                        <div class="prize-display">
+                            <div class="prize-label">Winner will receive:</div>
+                            <div class="prize-value">${raffle.prize}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="winner-details-footer">
+                    <a href="${mailtoLink}" class="btn-email-winner">
+                        ✉️ Send Email
+                    </a>
+                    ${winner.mobile ? `<a href="tel:${winner.mobile}" class="btn-call-winner">📞 Call Winner</a>` : ''}
+                    <button class="btn-copy-details" onclick="copyWinnerDetails(${JSON.stringify(winner).replace(/"/g, '&quot;')}, '${winningTicket}', '${raffle.prize.replace(/'/g, "\\'")}')">📋 Copy Details</button>
                 </div>
             </div>
         `;
+        
         document.body.appendChild(modal);
+        
+        // Animate in
+        setTimeout(() => {
+            modal.querySelector('.winner-details-card').style.transform = 'translateY(0)';
+            modal.querySelector('.winner-details-card').style.opacity = '1';
+        }, 10);
+        
     } catch (error) {
         console.error('Error:', error);
-        alert('Failed to load winner contact details');
+        alert('Failed to load winner details: ' + error.message);
     }
+}
+
+function copyWinnerDetails(winner, winningTicket, prize) {
+    const details = `Winner Details\n\nName: ${winner.name} ${winner.surname}\nEmail: ${winner.email}\nMobile: ${winner.mobile || 'Not provided'}\nWinning Ticket: #${winningTicket}\nTotal Tickets: ${winner.tickets}\nPrize: ${prize}`;
+    
+    navigator.clipboard.writeText(details).then(() => {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.style.background = '#48bb78';
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = '';
+        }, 2000);
+    }).catch(err => {
+        alert('Failed to copy details');
+    });
 }
 
 async function addBuyer() {

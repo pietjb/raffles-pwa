@@ -22,7 +22,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
     
-    <link rel="stylesheet" href="/style.css?v=3">
+    <link rel="stylesheet" href="/style.css?v=4">
     
     <!-- Add inline style to ensure login shows first -->
     <style>
@@ -35,8 +35,8 @@
     </style>
     
     <!-- Load config.js BEFORE script.js with cache busting -->
-    <script src="/config.js?v=3"></script>
-    <script src="/script.js?v=3"></script>
+    <script src="/config.js?v=4"></script>
+    <script src="/script.js?v=4"></script>
 
     <!-- PWA Install Prompt Handler -->
     <script>
@@ -311,11 +311,14 @@
                     <div class="section-header-icon">🎲</div>
                     <div>
                         <h2>Draw Winner</h2>
-                        <p class="section-subtitle">Randomly select a winning ticket from all entries</p>
+                        <p class="section-subtitle">Experience the excitement of the live draw!</p>
                     </div>
                 </div>
                 <div class="draw-content">
-                    <button onclick="drawWinner()" class="btn-draw">🎯 Draw Winner</button>
+                    <div id="draw-stage" class="draw-stage">
+                        <button onclick="drawWinner()" id="btn-start-draw" class="btn-draw">🎯 Start the Draw</button>
+                    </div>
+                    <div id="draw-narrative" class="draw-narrative"></div>
                     <div id="winner"></div>
                 </div>
             </section>

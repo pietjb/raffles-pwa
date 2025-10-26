@@ -59,7 +59,7 @@
       "email": "test@gmail.com",
       "tickets": 5,
       "purchaseDate": "2025-10-26",
-      "paymentReceived": false,
+      "paymentReceived": true,
       "buyerNumber": 1,
       "ticket_numbers": [
         966554,
@@ -76,7 +76,7 @@
       "email": "test@gmail.com",
       "tickets": 4,
       "purchaseDate": "2025-10-26",
-      "paymentReceived": false,
+      "paymentReceived": true,
       "buyerNumber": 2,
       "ticket_numbers": [
         339717,
