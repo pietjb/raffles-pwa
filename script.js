@@ -493,19 +493,24 @@ async function requestPayment(buyerNumber, ticketCount) {
         if (raffle.bankingDetails) {
             bankingInfo = `\n\nBanking Details:\n- Account Owner: ${raffle.bankingDetails.accountOwner}\n- Bank Name: ${raffle.bankingDetails.bankName}\n- Branch Code: ${raffle.bankingDetails.branchCode}\n- Account Number: ${raffle.bankingDetails.accountNumber}\n- Account Type: ${raffle.bankingDetails.accountType}`;
         }
+        else
+            { 
+                bankingInfo = 'No EFT banking available for this raffle';
+            }
 
         const emailSubject = `${raffle.name} - Payment Request for Raffle Tickets`;
         const emailBody = `Dear ${buyer.name},
 
 Thank you for purchasing tickets for the ${raffle.name} raffle.
 
-Payment Details:
+Raffle purchase details:
 - Number of Tickets: ${ticketCount}
 - Cost per Ticket: R${raffle.ticketCost.toFixed(2)}
 - Total Amount: R${totalAmount}
 - Payment Reference: ${paymentReference}${bankingInfo}
 
-Payment Link: ${raffle.paymentLink}
+If you have a Capitec bank account (and banking app), you can use the following payment link to complete your payment quickly and easily:
+Capitec Payment Link: ${raffle.paymentLink}
 
 Best regards,
 Raffle Team`;
@@ -845,10 +850,10 @@ async function showPaymentOptions(buyerNumber, tickets) {
             <h3>Payment Options</h3>
             <div class="payment-options">
                 <button onclick="showQRCode(${buyerNumber}, ${tickets})">
-                    Scan QR Code
+                    Scan QR code for Link (Capitec only)
                 </button>
                 <button onclick="sendEmailPayment(${buyerNumber}, ${tickets})">
-                    Send Email Link
+                    Send payment request via email
                 </button>
             </div>
             <button class="close-btn" onclick="this.closest('.payment-modal').remove()">Cancel</button>
@@ -886,7 +891,7 @@ async function showQRCode(buyerNumber, tickets) {
         qrModal.className = 'qr-modal';
         qrModal.innerHTML = `
             <div class="qr-modal-content">
-                <h3>Scan QR Code for Payment</h3>
+                <h3>Scan QR Code for payment link (Capitec accounts only)</h3>
                 <img src="data:image/png;base64,${data.qr_code}" alt="Payment QR Code">
                 <div class="payment-info">
                     <pre>${data.payment_info}</pre>
