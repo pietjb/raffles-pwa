@@ -1,5 +1,105 @@
 const ACCESS_PASSWORD = "raffle2024";
 
+// Screen Recording Variables
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecording = false;
+
+// Screen Recording Functions
+async function startScreenRecording() {
+    try {
+        // Request screen capture with audio
+        const displayStream = await navigator.mediaDevices.getDisplayMedia({
+            video: {
+                mediaSource: 'screen',
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+                frameRate: { ideal: 30 }
+            },
+            audio: false // Set to true if you want to capture system audio
+        });
+
+        recordedChunks = [];
+        
+        // Create MediaRecorder with appropriate codec
+        const options = { mimeType: 'video/webm;codecs=vp9' };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options.mimeType = 'video/webm;codecs=vp8';
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                options.mimeType = 'video/webm';
+            }
+        }
+
+        mediaRecorder = new MediaRecorder(displayStream, options);
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            
+            // Generate filename with raffle name and timestamp
+            const raffleName = currentRaffle ? currentRaffle.replace(/[^a-z0-9]/gi, '_') : 'Raffle';
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `${raffleName}_Draw_Recording_${timestamp}.webm`;
+            
+            // Create download link
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Cleanup
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+            
+            // Stop all tracks
+            displayStream.getTracks().forEach(track => track.stop());
+            
+            isRecording = false;
+            updateRecordingUI(false);
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+        updateRecordingUI(true);
+        
+        console.log('Screen recording started for raffle draw');
+        return true;
+    } catch (error) {
+        console.error('Failed to start screen recording:', error);
+        alert('Screen recording failed: ' + error.message + '\n\nThe draw will continue without recording.');
+        return false;
+    }
+}
+
+function stopScreenRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        console.log('Screen recording stopped');
+    }
+}
+
+function updateRecordingUI(recording) {
+    const recordBtn = document.getElementById('record-indicator');
+    if (recordBtn) {
+        if (recording) {
+            recordBtn.innerHTML = '🔴 Recording...';
+            recordBtn.classList.add('recording-active');
+        } else {
+            recordBtn.innerHTML = '';
+            recordBtn.classList.remove('recording-active');
+        }
+    }
+}
+
 // Service Worker Registration and Update Detection
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -970,7 +1070,39 @@ async function drawWinner() {
         return;
     }
 
+    // Scroll draw card into view for full visibility
+    const drawCard = document.querySelector('.draw-winner-card');
+    if (drawCard) {
+        drawCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Wait briefly for scroll to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    // Ask user if they want to record the draw
+    const shouldRecord = confirm(
+        '📹 Screen Recording for Audit\n\n' +
+        'Would you like to record this draw for audit purposes?\n\n' +
+        '• The recording will capture the entire draw process\n' +
+        '• Video will be automatically saved when draw completes\n' +
+        '• You\'ll need to select which screen/window to record\n\n' +
+        'Click OK to record, or Cancel to proceed without recording.'
+    );
+
     try {
+        // Start recording if user agreed
+        if (shouldRecord) {
+            const recordingStarted = await startScreenRecording();
+            if (!recordingStarted) {
+                // User cancelled screen selection or error occurred
+                const continueWithoutRecording = confirm(
+                    'Recording was not started.\n\nDo you want to continue the draw without recording?'
+                );
+                if (!continueWithoutRecording) {
+                    return;
+                }
+            }
+        }
+
         const drawStage = document.getElementById("draw-stage");
         const narrativeElement = document.getElementById("draw-narrative");
         const winnerElement = document.getElementById("winner");
@@ -1140,12 +1272,25 @@ async function drawWinner() {
         
         createConfetti();
         
+        // Stop recording after a delay to capture the celebration
+        if (isRecording) {
+            setTimeout(() => {
+                stopScreenRecording();
+                alert('✅ Draw recording saved!\n\nThe video file has been downloaded to your device.');
+            }, 3000); // Wait 3 seconds to capture celebration
+        }
+        
         // Re-enable button and update text
         startButton.disabled = false;
         startButton.textContent = '🎯 Draw Again';
 
     } catch (error) {
         console.error('Error drawing winner:', error);
+        
+        // Stop recording if there was an error
+        if (isRecording) {
+            stopScreenRecording();
+        }
         const narrativeElement = document.getElementById("draw-narrative");
         const startButton = document.getElementById("btn-start-draw");
         
@@ -1242,6 +1387,12 @@ function confirmRedraw() {
     );
     
     if (confirmation) {
+        // Scroll draw card into view for full visibility
+        const drawCard = document.querySelector('.draw-winner-card');
+        if (drawCard) {
+            drawCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
         // Clear current winner display
         document.getElementById('winner').innerHTML = '';
         document.getElementById('draw-narrative').innerHTML = '';

@@ -902,6 +902,7 @@ button:active, .btn-primary:active {
     margin-bottom: 25px;
     padding-bottom: 15px;
     border-bottom: 3px solid #e2e8f0;
+    position: relative;
 }
 
 .section-header-icon {
@@ -927,6 +928,36 @@ button:active, .btn-primary:active {
     margin: 5px 0 0 0;
     color: #718096;
     font-size: 0.9em;
+}
+
+/* Recording Indicator */
+.record-indicator {
+    margin-left: auto;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.record-indicator.recording-active {
+    background: #fed7d7;
+    color: #c53030;
+    border: 2px solid #fc8181;
+    animation: recordingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes recordingPulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
 }
 
 /* Add Buyer Card */
@@ -2721,9 +2752,12 @@ button[onclick="drawWinner()"]:disabled:hover {
     border-radius: 16px;
     max-width: 500px;
     width: 90%;
+    max-height: 90vh;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     animation: slideUp 0.3s ease;
-    overflow: hidden;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 @keyframes slideUp {
@@ -2740,8 +2774,9 @@ button[onclick="drawWinner()"]:disabled:hover {
 .modal-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 30px;
+    padding: 25px 20px;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .modal-icon {
@@ -2848,7 +2883,7 @@ button[onclick="drawWinner()"]:disabled:hover {
 
 /* QR Modal Specific */
 .qr-code-container {
-    padding: 30px;
+    padding: 20px;
     background: white;
     display: flex;
     justify-content: center;
@@ -2856,16 +2891,16 @@ button[onclick="drawWinner()"]:disabled:hover {
 }
 
 .qr-code-container img {
-    max-width: 280px;
+    max-width: 250px;
     width: 100%;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .payment-info-card {
-    margin: 0 25px 25px 25px;
+    margin: 0 20px 20px 20px;
     background: #f7fafc;
-    padding: 20px;
+    padding: 15px;
     border-radius: 12px;
     border: 1px solid #e2e8f0;
 }
@@ -2891,7 +2926,8 @@ button[onclick="drawWinner()"]:disabled:hover {
 .modal-actions {
     display: flex;
     gap: 12px;
-    padding: 0 25px 25px 25px;
+    padding: 0 20px 20px 20px;
+    flex-shrink: 0;
 }
 
 .btn-open-link {
@@ -2950,22 +2986,47 @@ button[onclick="drawWinner()"]:disabled:hover {
     .qr-modal-content {
         width: 95%;
         max-width: none;
+        max-height: 85vh;
+        border-radius: 12px;
     }
     
     .modal-header {
-        padding: 25px 20px;
+        padding: 20px 15px;
+    }
+    
+    .modal-header h3 {
+        font-size: 1.4em;
+    }
+    
+    .modal-icon {
+        font-size: 2.5em;
     }
     
     .payment-options {
-        padding: 20px;
+        padding: 15px;
     }
     
     .qr-code-container {
-        padding: 20px;
+        padding: 15px;
+    }
+    
+    .qr-code-container img {
+        max-width: 200px;
+    }
+    
+    .payment-info-card {
+        margin: 0 15px 15px 15px;
+        padding: 12px;
     }
     
     .modal-actions {
         flex-direction: column;
+        padding: 0 15px 15px 15px;
+    }
+    
+    .modal-cancel-btn {
+        width: calc(100% - 30px);
+        margin: 0 15px 15px 15px;
     }
 
     .winner-reveal {
