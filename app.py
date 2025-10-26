@@ -414,17 +414,27 @@ def add_buyer(raffle_id):
 @app.route('/api/draw/<raffle_id>', methods=['POST'])
 def draw_winner(raffle_id):
     try:
-        buyers = load_buyers(raffle_id)
-        if not buyers:
+        all_buyers = load_buyers(raffle_id)
+        if not all_buyers:
             return jsonify({"error": "No tickets available for draw"}), 400
 
+        # Filter to only include buyers who have paid
+        paid_buyers = [buyer for buyer in all_buyers if buyer.get('paymentReceived') == True]
+        
+        if not paid_buyers:
+            return jsonify({"error": "No paid tickets available for draw"}), 400
+
+        # Only add tickets from paid buyers
         tickets = []
-        for buyer in buyers:
+        for buyer in paid_buyers:
             for ticket in buyer["ticket_numbers"]:
                 tickets.append({
                     "number": ticket,
                     "name": f"{buyer['name']} {buyer['surname']}"
                 })
+
+        if not tickets:
+            return jsonify({"error": "No paid tickets available for draw"}), 400
 
         winner = random.choice(tickets)
         winner_text = f"Winner: Ticket #{str(winner['number']).zfill(6)} - {winner['name']}"

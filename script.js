@@ -208,21 +208,41 @@ async function loadRaffles() {
             const today = new Date();
             const daysUntil = Math.ceil((drawDate - today) / (1000 * 60 * 60 * 24));
             const isUpcoming = daysUntil > 0;
+            const isDrawn = raffle.drawn === true;
+            
+            // Determine status and badge
+            let statusBadge = '';
+            let statusClass = '';
+            let daysDisplay = '';
+            
+            if (isDrawn) {
+                statusBadge = '<div class="raffle-badge drawn-badge">🏆 Prize Drawn</div>';
+                statusClass = 'raffle-drawn';
+                daysDisplay = '<span class="days-remaining drawn">Prize Drawn</span>';
+            } else if (!isUpcoming) {
+                statusBadge = '<div class="raffle-badge expired-badge">Closed</div>';
+                statusClass = 'raffle-expired';
+                daysDisplay = '<span class="days-remaining expired">Draw date passed</span>';
+            } else if (daysUntil <= 3) {
+                statusBadge = '<div class="raffle-badge urgent-badge">Ending Soon</div>';
+                daysDisplay = `<span class="days-remaining urgent">${daysUntil} day${daysUntil !== 1 ? 's' : ''} left</span>`;
+            } else {
+                daysDisplay = `<span class="days-remaining">${daysUntil} day${daysUntil !== 1 ? 's' : ''} left</span>`;
+            }
             
             return `
-            <div class="raffle-card ${!isUpcoming ? 'raffle-expired' : ''}">
+            <div class="raffle-card ${statusClass}">
                 ${raffle.thumbnail || raffle.image ? `
                 <div class="raffle-image">
                     <img src="/uploads/${raffle.thumbnail ? 'thumbnails/' + raffle.thumbnail : raffle.image}" 
                          alt="${raffle.name}" 
                          onclick="selectRaffle('${raffle.id}')">
-                    ${!isUpcoming ? '<div class="raffle-badge expired-badge">Closed</div>' : 
-                      (daysUntil <= 3 ? '<div class="raffle-badge urgent-badge">Ending Soon</div>' : '')}
+                    ${statusBadge}
                 </div>` : ''}
                 <div class="raffle-card-content">
                     <div class="raffle-card-header" onclick="selectRaffle('${raffle.id}')">
                         <h3 class="raffle-title">${raffle.name}</h3>
-                        ${isUpcoming ? `<span class="days-remaining">${daysUntil} day${daysUntil !== 1 ? 's' : ''} left</span>` : '<span class="days-remaining expired">Draw date passed</span>'}
+                        ${daysDisplay}
                     </div>
                     <div class="raffle-details" onclick="selectRaffle('${raffle.id}')">
                         <div class="detail-item">
@@ -1399,6 +1419,121 @@ function copyWinnerDetails(winner, winningTicket, prize) {
     }).catch(err => {
         alert('Failed to copy details');
     });
+}
+
+async function exportRaffleData() {
+    if (!currentRaffle) {
+        alert("Please select a raffle first");
+        return;
+    }
+
+    try {
+        // Get raffle and buyers data
+        const [raffleRes, buyersRes] = await Promise.all([
+            fetch(`/api/raffles/${currentRaffle}`),
+            fetch(`/api/buyers/${currentRaffle}`)
+        ]);
+
+        if (!raffleRes.ok || !buyersRes.ok) {
+            throw new Error('Failed to fetch data');
+        }
+
+        const raffle = await raffleRes.json();
+        const buyers = await buyersRes.json();
+
+        // Create CSV content
+        let csv = '';
+        
+        // Raffle information section
+        csv += 'RAFFLE INFORMATION\n';
+        csv += `Raffle Name,${escapeCSV(raffle.name)}\n`;
+        csv += `Raffle ID,${raffle.id}\n`;
+        csv += `Draw Date,${new Date(raffle.drawDate).toLocaleDateString('en-ZA')}\n`;
+        csv += `Prize,${escapeCSV(raffle.prize)}\n`;
+        csv += `Ticket Cost,R${raffle.ticketCost.toFixed(2)}\n`;
+        csv += `Payment Link,${raffle.paymentLink}\n`;
+        csv += `Draw Status,${raffle.drawn ? 'Completed' : 'Pending'}\n`;
+        if (raffle.winner) {
+            csv += `Winner,${escapeCSV(raffle.winner)}\n`;
+        }
+        csv += '\n';
+
+        // Summary statistics
+        const totalBuyers = buyers.length;
+        const totalTickets = buyers.reduce((sum, b) => sum + b.tickets, 0);
+        const paidBuyers = buyers.filter(b => b.paymentReceived).length;
+        const paidTickets = buyers.filter(b => b.paymentReceived).reduce((sum, b) => sum + b.tickets, 0);
+        const totalRevenue = buyers.filter(b => b.paymentReceived).reduce((sum, b) => sum + (b.tickets * raffle.ticketCost), 0);
+        const pendingRevenue = buyers.filter(b => !b.paymentReceived).reduce((sum, b) => sum + (b.tickets * raffle.ticketCost), 0);
+
+        csv += 'SUMMARY STATISTICS\n';
+        csv += `Total Buyers,${totalBuyers}\n`;
+        csv += `Total Tickets Sold,${totalTickets}\n`;
+        csv += `Paid Buyers,${paidBuyers}\n`;
+        csv += `Paid Tickets,${paidTickets}\n`;
+        csv += `Unpaid Buyers,${totalBuyers - paidBuyers}\n`;
+        csv += `Unpaid Tickets,${totalTickets - paidTickets}\n`;
+        csv += `Total Revenue (Paid),R${totalRevenue.toFixed(2)}\n`;
+        csv += `Pending Revenue (Unpaid),R${pendingRevenue.toFixed(2)}\n`;
+        csv += `Potential Total Revenue,R${(totalRevenue + pendingRevenue).toFixed(2)}\n`;
+        csv += '\n\n';
+
+        // Buyers table header
+        csv += 'BUYER DETAILS\n';
+        csv += 'Buyer #,Name,Surname,Email,Mobile,Tickets,Purchase Date,Payment Status,Ticket Numbers\n';
+
+        // Buyers data
+        buyers.forEach(buyer => {
+            const ticketNumbers = buyer.ticket_numbers.map(t => t.toString().padStart(6, '0')).join('; ');
+            csv += `${buyer.buyerNumber},`;
+            csv += `${escapeCSV(buyer.name)},`;
+            csv += `${escapeCSV(buyer.surname)},`;
+            csv += `${escapeCSV(buyer.email)},`;
+            csv += `${buyer.mobile || 'N/A'},`;
+            csv += `${buyer.tickets},`;
+            csv += `${new Date(buyer.purchaseDate).toLocaleDateString('en-ZA')},`;
+            csv += `${buyer.paymentReceived ? 'Paid' : 'Unpaid'},`;
+            csv += `"${ticketNumbers}"\n`;
+        });
+
+        // Create and download file
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const fileName = `${raffle.name.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+        
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show success message - find the export button
+        const exportButtons = document.querySelectorAll('.btn-export');
+        exportButtons.forEach(btn => {
+            const originalText = btn.textContent;
+            const originalBg = btn.style.background;
+            btn.textContent = '✓ Exported!';
+            btn.style.background = '#48bb78';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = originalBg;
+            }, 2000);
+        });
+
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        alert('Failed to export data: ' + error.message);
+    }
+}
+
+function escapeCSV(str) {
+    if (str === null || str === undefined) return '';
+    str = str.toString();
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
 }
 
 async function addBuyer() {
