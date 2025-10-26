@@ -16,7 +16,8 @@
         "branchCode": "470010",
         "accountNumber": "2274137931",
         "accountType": "Savings"
-      }
+      },
+      "thumbnail": "raffle_1_thumb.jpg"
     },
     {
       "id": "2",
@@ -34,7 +35,8 @@
         "branchCode": "470010",
         "accountNumber": "2274137931",
         "accountType": "Savings"
-      }
+      },
+      "thumbnail": "raffle_2_thumb.jpg"
     }
   ],
   "current_raffle": null

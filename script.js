@@ -168,8 +168,8 @@ async function loadRaffles() {
         
         raffleList.innerHTML = raffles.map(raffle => `
             <div class="raffle-card">
+                ${raffle.thumbnail ? `<div class="raffle-image"><img src="/uploads/thumbnails/${raffle.thumbnail}" alt="${raffle.name}" onclick="selectRaffle('${raffle.id}')"></div>` : (raffle.image ? `<div class="raffle-image"><img src="/uploads/${raffle.image}" alt="${raffle.name}" onclick="selectRaffle('${raffle.id}')"></div>` : '')}
                 <div class="raffle-card-header">
-                    ${raffle.image ? `<div class="raffle-image" onclick="selectRaffle('${raffle.id}')"><img src="/uploads/${raffle.image}" alt="${raffle.name}"></div>` : ''}
                     <div onclick="selectRaffle('${raffle.id}')">
                         <h3>${raffle.name}</h3>
                         <div class="raffle-info">

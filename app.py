@@ -9,6 +9,7 @@ import qrcode
 from io import BytesIO
 import base64
 from werkzeug.utils import secure_filename
+from PIL import Image
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -16,12 +17,16 @@ app.logger.setLevel(logging.DEBUG)  # Set logging level to DEBUG for more detail
 
 # Configure upload folder
 UPLOAD_FOLDER = 'uploads'
+THUMBNAIL_FOLDER = 'uploads/thumbnails'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+if not os.path.exists(THUMBNAIL_FOLDER):
+    os.makedirs(THUMBNAIL_FOLDER)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['THUMBNAIL_FOLDER'] = THUMBNAIL_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 RAFFLES_FILE = 'raffle_data.json'
@@ -29,6 +34,26 @@ BUYERS_FILE = 'buyers.json'
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def create_thumbnail(image_path, thumbnail_path, max_size=(300, 300)):
+    """Create a thumbnail from the original image"""
+    try:
+        with Image.open(image_path) as img:
+            # Convert RGBA to RGB if necessary
+            if img.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                img = background
+            
+            # Create thumbnail
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            img.save(thumbnail_path, 'JPEG', quality=85, optimize=True)
+            return True
+    except Exception as e:
+        app.logger.error(f"Error creating thumbnail: {str(e)}")
+        return False
 
 def load_raffles():
     try:
@@ -86,6 +111,10 @@ def save_buyers(data):
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@app.route('/uploads/thumbnails/<filename>')
+def uploaded_thumbnail(filename):
+    return send_from_directory(app.config['THUMBNAIL_FOLDER'], filename)
+
 @app.route('/')
 def home():
     response = send_from_directory('.', 'index.html')
@@ -131,14 +160,26 @@ def create_raffle():
         
         # Handle image upload
         image_filename = None
+        thumbnail_filename = None
         if 'image' in request.files:
             file = request.files['image']
             if file and file.filename and allowed_file(file.filename):
                 # Create unique filename with raffle ID
                 ext = file.filename.rsplit('.', 1)[1].lower()
                 image_filename = f"raffle_{new_id}.{ext}"
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
+                thumbnail_filename = f"raffle_{new_id}_thumb.jpg"
+                
+                # Save original image
+                image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+                file.save(image_path)
                 app.logger.info(f"Image saved: {image_filename}")
+                
+                # Create thumbnail
+                thumbnail_path = os.path.join(app.config['THUMBNAIL_FOLDER'], thumbnail_filename)
+                if create_thumbnail(image_path, thumbnail_path):
+                    app.logger.info(f"Thumbnail created: {thumbnail_filename}")
+                else:
+                    thumbnail_filename = None
         
         # Parse banking details if provided
         banking_details = None
@@ -161,6 +202,8 @@ def create_raffle():
         
         if image_filename:
             new_raffle['image'] = image_filename
+            if thumbnail_filename:
+                new_raffle['thumbnail'] = thumbnail_filename
         
         if banking_details:
             new_raffle['bankingDetails'] = banking_details
