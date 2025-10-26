@@ -7,6 +7,53 @@
       "prize": "Photo shoot of 2 hours by Anine Koch Photography",
       "ticketCost": 100.0,
       "paymentLink": "https://aninekochphoto.mypixieset.com/"
+    },
+    {
+      "id": "2",
+      "name": "Raffle2",
+      "drawDate": "2025-12-01",
+      "prize": "Half lamb",
+      "ticketCost": 50.0,
+      "paymentLink": "https://aninekochphoto.mypixieset.com/"
+    },
+    {
+      "id": "3",
+      "name": "Nicolas Indoor hockey fundraise - CPT",
+      "drawDate": "2025-11-30",
+      "prize": "Photo shoot of 2 hours by Anine Koch Photography",
+      "ticketCost": 110.0,
+      "paymentLink": "https://aninekochphoto.mypixieset.com/",
+      "bankingDetails": {
+        "accountOwner": "N Koch",
+        "bankName": "Capitec bank",
+        "branchCode": "60254",
+        "accountNumber": "12345678",
+        "accountType": "Savings"
+      }
+    },
+    {
+      "id": "4",
+      "name": "No banking raffle",
+      "drawDate": "2025-11-11",
+      "prize": "dfsdf",
+      "ticketCost": 343.0,
+      "paymentLink": "sdfsdef",
+      "bankingDetails": {}
+    },
+    {
+      "id": "5",
+      "name": "banking raffle ",
+      "drawDate": "2025-11-11",
+      "prize": "dsdff",
+      "ticketCost": 3434.0,
+      "paymentLink": "ddsf",
+      "bankingDetails": {
+        "accountOwner": "N Koch",
+        "bankName": "ddfsdf",
+        "branchCode": "34343",
+        "accountNumber": "343434",
+        "accountType": "Savings"
+      }
     }
   ],
   "current_raffle": null

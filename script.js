@@ -1,3 +1,107 @@
+const ACCESS_PASSWORD = "raffle2024";
+
+// IMMEDIATELY enforce login screen on script load (before DOMContentLoaded)
+if (typeof document !== 'undefined') {
+    // This runs as soon as the script loads
+    const enforceLoginScreen = () => {
+        const loginScreen = document.getElementById('login-screen');
+        const appContent = document.getElementById('app-content');
+        
+        if (loginScreen) {
+            loginScreen.style.display = 'flex';
+            loginScreen.style.visibility = 'visible';
+        }
+        
+        if (appContent) {
+            appContent.style.display = 'none';
+            appContent.style.visibility = 'hidden';
+        }
+    };
+    
+    // Try to enforce immediately if DOM is already loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', enforceLoginScreen);
+    } else {
+        enforceLoginScreen();
+    }
+}
+
+function verifyAccess() {
+    console.log('verifyAccess called');
+    
+    const passwordInput = document.getElementById('access-password');
+    const password = passwordInput ? passwordInput.value : '';
+    const errorDiv = document.getElementById('login-error');
+    
+    console.log('Password entered:', password);
+    console.log('Expected password:', ACCESS_PASSWORD);
+    console.log('Match:', password === ACCESS_PASSWORD);
+    
+    if (password === ACCESS_PASSWORD) {
+        console.log('Password correct! Showing main content...');
+        
+        try {
+            // Hide login screen - use setProperty with important to override inline styles
+            const loginScreen = document.getElementById('login-screen');
+            console.log('Login screen element:', loginScreen);
+            if (loginScreen) {
+                loginScreen.style.setProperty('display', 'none', 'important');
+                loginScreen.style.setProperty('visibility', 'hidden', 'important');
+                console.log('Login screen hidden');
+            }
+            
+            // Show main content - use setProperty with important to override inline styles
+            const appContent = document.getElementById('app-content');
+            console.log('App content element:', appContent);
+            if (appContent) {
+                appContent.style.setProperty('display', 'block', 'important');
+                appContent.style.setProperty('visibility', 'visible', 'important');
+                console.log('App content shown');
+            }
+            
+            // Show raffle selector
+            const raffleSelector = document.getElementById('raffle-selector');
+            console.log('Raffle selector element:', raffleSelector);
+            if (raffleSelector) {
+                raffleSelector.style.setProperty('display', 'block', 'important');
+                console.log('Raffle selector shown');
+            }
+            
+            // Clear password field
+            if (passwordInput) {
+                passwordInput.value = '';
+            }
+            
+            // Hide error message
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+            }
+            
+            // Initialize the app
+            console.log('Calling loadRaffles...');
+            loadRaffles().then(() => {
+                console.log('loadRaffles completed successfully');
+            }).catch(err => {
+                console.error('Error in loadRaffles:', err);
+            });
+            
+        } catch (error) {
+            console.error('Error in verifyAccess:', error);
+            alert('An error occurred: ' + error.message);
+        }
+    } else {
+        console.log('Password incorrect!');
+        if (errorDiv) {
+            errorDiv.textContent = 'Invalid password. Please try again.';
+            errorDiv.style.display = 'block';
+        }
+        if (passwordInput) {
+            passwordInput.value = '';
+            passwordInput.focus();
+        }
+    }
+}
+
 // Remove the CONFIG definition comments and add verification
 console.log('Checking CONFIG availability:', typeof CONFIG !== 'undefined' ? 'Available' : 'Not Available');
 console.log('CONFIG object:', window.CONFIG || CONFIG);
@@ -135,6 +239,24 @@ async function deleteRaffle(raffleId) {
 function showNewRaffleForm() {
     document.getElementById("raffle-selector").style.display = "none";
     document.getElementById("new-raffle-form").style.display = "block";
+    // Reset banking details section
+    document.getElementById("banking-required").checked = false;
+    document.getElementById("banking-details-section").style.display = "none";
+}
+
+function toggleBankingDetails(isRequired) {
+    const bankingSection = document.getElementById("banking-details-section");
+    if (isRequired) {
+        bankingSection.style.display = "block";
+    } else {
+        bankingSection.style.display = "none";
+        // Clear banking fields when hidden
+        document.getElementById("account-owner").value = "";
+        document.getElementById("bank-name").value = "";
+        document.getElementById("branch-code").value = "";
+        document.getElementById("account-number").value = "";
+        document.getElementById("account-type").value = "";
+    }
 }
 
 function showRaffleSelector() {
@@ -150,10 +272,43 @@ async function createRaffle() {
     const prize = document.getElementById("prize").value;
     const ticketCost = parseFloat(document.getElementById("ticket-cost").value);
     const paymentLink = document.getElementById("payment-link").value;
+    const bankingRequired = document.getElementById("banking-required").checked;
 
+    // Validate basic fields
     if (!name || !drawDate || !prize || !ticketCost || !paymentLink) {
-        alert("Please fill all fields");
+        alert("Please fill all required fields");
         return;
+    }
+
+    // Build request body
+    const raffleData = {
+        name, 
+        drawDate, 
+        prize,
+        ticketCost,
+        paymentLink
+    };
+
+    // If banking is required, validate and include banking details
+    if (bankingRequired) {
+        const accountOwner = document.getElementById("account-owner").value;
+        const bankName = document.getElementById("bank-name").value;
+        const branchCode = document.getElementById("branch-code").value;
+        const accountNumber = document.getElementById("account-number").value;
+        const accountType = document.getElementById("account-type").value;
+
+        if (!accountOwner || !bankName || !branchCode || !accountNumber || !accountType) {
+            alert("Please fill all banking details fields");
+            return;
+        }
+
+        raffleData.bankingDetails = {
+            accountOwner,
+            bankName,
+            branchCode,
+            accountNumber,
+            accountType
+        };
     }
 
     try {
@@ -169,13 +324,7 @@ async function createRaffle() {
             headers: { 
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ 
-                name, 
-                drawDate, 
-                prize,
-                ticketCost,
-                paymentLink 
-            })
+            body: JSON.stringify(raffleData)
         });
 
         console.log('Response status:', res.status);
@@ -194,6 +343,13 @@ async function createRaffle() {
         document.getElementById("prize").value = "";
         document.getElementById("ticket-cost").value = "";
         document.getElementById("payment-link").value = "";
+        document.getElementById("banking-required").checked = false;
+        document.getElementById("banking-details-section").style.display = "none";
+        document.getElementById("account-owner").value = "";
+        document.getElementById("bank-name").value = "";
+        document.getElementById("branch-code").value = "";
+        document.getElementById("account-number").value = "";
+        document.getElementById("account-type").value = "";
         
         await loadRaffles();
         showRaffleSelector();
@@ -308,12 +464,15 @@ async function requestPayment(buyerNumber, ticketCount) {
             throw new Error('Buyer not found');
         }
         const buyer = await buyerRes.json();
+        console.log('Buyer details:', buyer); // Debug log
         
         // Extract initial and surname from buyer name
         const nameParts = buyer.name.trim().split(' ').filter(Boolean);
         const initial = nameParts[0].charAt(0);
         const surname = nameParts[nameParts.length - 1];
         const paymentReference = `${initial}${surname}`.toUpperCase();
+        
+        console.log('Generated payment reference:', paymentReference); // Debug log
 
         // Get raffle details
         const raffleRes = await fetch(`/api/raffles`);
@@ -328,8 +487,13 @@ async function requestPayment(buyerNumber, ticketCount) {
         }
 
         const totalAmount = (ticketCount * raffle.ticketCost).toFixed(2);
+        
+        // Build banking details section
+        let bankingInfo = '';
+        if (raffle.bankingDetails) {
+            bankingInfo = `\n\nBanking Details:\n- Account Owner: ${raffle.bankingDetails.accountOwner}\n- Bank Name: ${raffle.bankingDetails.bankName}\n- Branch Code: ${raffle.bankingDetails.branchCode}\n- Account Number: ${raffle.bankingDetails.accountNumber}\n- Account Type: ${raffle.bankingDetails.accountType}`;
+        }
 
-        // Create email content
         const emailSubject = `${raffle.name} - Payment Request for Raffle Tickets`;
         const emailBody = `Dear ${buyer.name},
 
@@ -339,32 +503,32 @@ Payment Details:
 - Number of Tickets: ${ticketCount}
 - Cost per Ticket: R${raffle.ticketCost.toFixed(2)}
 - Total Amount: R${totalAmount}
+- Payment Reference: ${paymentReference}${bankingInfo}
 
-Click below to make your payment:
-${raffle.paymentLink}
-
-Payment Reference: ${paymentReference}
+Payment Link: ${raffle.paymentLink}
 
 Best regards,
 Raffle Team`;
 
-        // Detect if device is mobile
+        // Check if mobile device
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
+        
         if (isMobile) {
-            // For mobile devices, use mailto to open native Gmail app
-            const mailtoLink = `mailto:${buyer.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-            window.location.href = mailtoLink;
+            // On mobile, use mailto which will open the default email client
+            const mailtoUrl = `mailto:${encodeURIComponent(buyer.email)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+            window.location.href = mailtoUrl;
         } else {
-            // For desktop, open Gmail in browser
-            const params = new URLSearchParams({
-                to: buyer.email,
-                su: emailSubject,
-                body: emailBody
-            });
-
-            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&${params.toString()}`;
-            window.open(gmailUrl, '_blank');
+            // On desktop, try Gmail web first, fallback to mailto
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(buyer.email)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+            
+            // Try to open Gmail in new tab
+            const gmailWindow = window.open(gmailUrl, '_blank');
+            
+            // If popup was blocked, fallback to mailto
+            if (!gmailWindow || gmailWindow.closed || typeof gmailWindow.closed === 'undefined') {
+                const mailtoUrl = `mailto:${encodeURIComponent(buyer.email)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+                window.location.href = mailtoUrl;
+            }
         }
 
     } catch (error) {
@@ -744,21 +908,44 @@ async function showQRCode(buyerNumber, tickets) {
     }
 }
 
-// Initialize
+// Initialize - Hide main content and show login FIRST
 document.addEventListener('DOMContentLoaded', () => {
-    // Show raffle selector and load raffles
-    document.getElementById("raffle-selector").style.display = "block";
-    document.getElementById("raffle-content").style.display = "none";
-    document.getElementById("new-raffle-form").style.display = "none";
+    // CRITICAL: Force login screen to show and hide main content
+    const loginScreen = document.getElementById('login-screen');
+    const appContent = document.getElementById('app-content');
     
-    // Set today's date as default for new buyers
-    const today = new Date().toISOString().split('T')[0];
-    if (document.getElementById('purchaseDate')) {
-        document.getElementById('purchaseDate').value = today;
+    if (loginScreen) {
+        loginScreen.style.display = 'flex';
+        loginScreen.style.visibility = 'visible';
     }
     
-    // Load available raffles
-    loadRaffles();
+    if (appContent) {
+        appContent.style.display = 'none';
+        appContent.style.visibility = 'hidden';
+    }
+    
+    // Focus the password input
+    const passwordInput = document.getElementById('access-password');
+    if (passwordInput) {
+        setTimeout(() => {
+            passwordInput.focus();
+        }, 100);
+        
+        // Add Enter key support
+        passwordInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                verifyAccess();
+            }
+        });
+    }
+
+    // Set today's date as default for new buyers
+    const today = new Date().toISOString().split('T')[0];
+    const purchaseDateInput = document.getElementById('purchaseDate');
+    if (purchaseDateInput) {
+        purchaseDateInput.value = today;
+    }
 
     // Register Service Worker
     if ('serviceWorker' in navigator) {

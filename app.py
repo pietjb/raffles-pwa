@@ -70,7 +70,11 @@ def save_buyers(data):
 
 @app.route('/')
 def home():
-    return send_from_directory('.', 'index.html')
+    response = send_from_directory('.', 'index.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/api/raffles', methods=['GET'])
 def get_raffles():
@@ -107,7 +111,8 @@ def create_raffle():
             'drawDate': data['drawDate'],
             'prize': data['prize'],
             'ticketCost': float(data['ticketCost']),
-            'paymentLink': data['paymentLink']
+            'paymentLink': data['paymentLink'],
+            'bankingDetails': data.get('bankingDetails', {})
         }
         
         raffles_data['raffles'].append(new_raffle)
@@ -447,11 +452,19 @@ def serve_sw():
 
 @app.route('/style.css')
 def serve_css():
-    return send_from_directory('.', 'style.css')
+    response = send_from_directory('.', 'style.css')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/script.js')
 def serve_js():
-    return send_from_directory('.', 'script.js')
+    response = send_from_directory('.', 'script.js')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/icons/<path:filename>')
 def serve_icon(filename):

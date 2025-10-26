@@ -19,9 +19,19 @@
     
     <link rel="stylesheet" href="/style.css">
     
-    <!-- Load config.js BEFORE script.js -->
-    <script src="/config.js"></script>
-    <script src="/script.js" defer></script>
+    <!-- Add inline style to ensure login shows first -->
+    <style>
+        #login-screen {
+            display: flex !important;
+        }
+        #app-content {
+            display: none !important;
+        }
+    </style>
+    
+    <!-- Load config.js BEFORE script.js with cache busting -->
+    <script src="/config.js?v=2"></script>
+    <script src="/script.js?v=2"></script>
 
     <!-- PWA Install Prompt Handler -->
     <script>
@@ -56,64 +66,110 @@
     </script>
 </head>
 <body>
-    <h1>🎟 Multi-Raffle System</h1>
-
-    <!-- Raffle Selector Section -->
-    <section id="raffle-selector">
-        <h2>Select Raffle</h2>
-        <div id="raffle-list"></div>
-        <button onclick="showNewRaffleForm()">Create New Raffle</button>
-    </section>
-
-    <!-- New Raffle Form Section -->
-    <section id="new-raffle-form" style="display: none;">
-        <h2>Create New Raffle</h2>
-        <input id="raffle-name" placeholder="Raffle Name" required>
-        <input id="draw-date" type="date" required>
-        <input id="prize" placeholder="Prize Description" required>
-        <input id="ticket-cost" type="number" step="0.01" min="0" placeholder="Ticket Cost (R)" required>
-        <input id="payment-link" type="url" placeholder="Payment Link URL" required>
-        <button onclick="createRaffle()">Create Raffle</button>
-        <button onclick="showRaffleSelector()" class="secondary">Cancel</button>
-    </section>
-
-    <!-- Main Raffle Content -->
-    <div id="raffle-content" style="display: none;">
-        <button class="back-btn" onclick="showRaffleSelector()">Back to Raffles</button>
-        <section class="raffle-header">
-            <h2 id="current-raffle-name"></h2>
-            <div class="raffle-info">
-                <p>Draw Date: <span id="draw-date-display"></span></p>
-                <p>Prize: <span id="prize-display"></span></p>
-                <p>Ticket Cost: <span id="ticket-cost-display"></span></p>
+    <!-- Blocking script to ensure login shows first -->
+    <script>
+        // This executes IMMEDIATELY as the page renders
+        document.write('<style>#app-content{display:none !important;visibility:hidden !important;}#login-screen{display:flex !important;visibility:visible !important;}</style>');
+    </script>
+    
+    <!-- Login Screen (must be first and visible) -->
+    <div id="login-screen">
+        <div class="login-container">
+            <h1>🎟️ Raffle System</h1>
+            <div class="login-form">
+                <input 
+                    type="password" 
+                    id="access-password" 
+                    placeholder="Enter password"
+                    autocomplete="off"
+                />
+                <button onclick="verifyAccess()">Login</button>
+                <div id="login-error" class="error-message"></div>
             </div>
-            <button onclick="showRaffleSelector()" class="secondary">Change Raffle</button>
+        </div>
+    </div>
+
+    <!-- Main App Content (hidden until login) -->
+    <div id="app-content">
+        <!-- Raffle Selector Section -->
+        <section id="raffle-selector">
+            <h2>Select Raffle</h2>
+            <div id="raffle-list"></div>
+            <button onclick="showNewRaffleForm()">Create New Raffle</button>
         </section>
 
-        <!-- Existing buyer form and sections -->
-        <section>
-            <h2>Add Buyer</h2>
-            <div class="buyer-form">
-                <input id="name" placeholder="Name" required>
-                <input id="surname" placeholder="Surname" required>
-                <input id="mobile" placeholder="Mobile">
-                <input id="email" type="email" placeholder="Email" required>
-                <input id="tickets" type="number" min="1" placeholder="Number of tickets" required>
-                <input id="purchaseDate" type="date" required>
-                <button onclick="addBuyer()">Add Buyer</button>
+        <!-- New Raffle Form Section -->
+        <section id="new-raffle-form" style="display: none;">
+            <h2>Create New Raffle</h2>
+            <input id="raffle-name" placeholder="Raffle Name" required>
+            <input id="draw-date" type="date" required>
+            <input id="prize" placeholder="Prize Description" required>
+            <input id="ticket-cost" type="number" step="0.01" min="0" placeholder="Ticket Cost (R)" required>
+            <input id="payment-link" type="url" placeholder="Payment Link URL" required>
+            
+            <div style="margin: 15px 0;">
+                <label>
+                    <input type="checkbox" id="banking-required" onchange="toggleBankingDetails(this.checked)">
+                    Banking details required
+                </label>
             </div>
+            
+            <div id="banking-details-section" style="display: none;">
+                <h3>Banking Details</h3>
+                <input id="account-owner" placeholder="Account Owner">
+                <input id="bank-name" placeholder="Bank Name">
+                <input id="branch-code" placeholder="Branch Code">
+                <input id="account-number" placeholder="Account Number">
+                <select id="account-type">
+                    <option value="">Select Account Type</option>
+                    <option value="Savings">Savings</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Current">Current</option>
+                </select>
+            </div>
+            
+            <button onclick="createRaffle()">Create Raffle</button>
+            <button onclick="showRaffleSelector()" class="secondary">Cancel</button>
         </section>
 
-        <section>
-            <h2>All Buyers</h2>
-            <div id="buyers"></div>
-        </section>
+        <!-- Raffle Content Section -->
+        <div id="raffle-content" style="display: none;">
+            <button class="back-btn" onclick="showRaffleSelector()">Back to Raffles</button>
+            <section class="raffle-header">
+                <h2 id="current-raffle-name"></h2>
+                <div class="raffle-info">
+                    <p>Draw Date: <span id="draw-date-display"></span></p>
+                    <p>Prize: <span id="prize-display"></span></p>
+                    <p>Ticket Cost: <span id="ticket-cost-display"></span></p>
+                </div>
+                <button onclick="showRaffleSelector()" class="secondary">Change Raffle</button>
+            </section>
 
-        <section>
-            <h2>Draw Winner</h2>
-            <button onclick="drawWinner()">Draw Winner</button>
-            <div id="winner"></div>
-        </section>
+            <!-- Existing buyer form and sections -->
+            <section>
+                <h2>Add Buyer</h2>
+                <div class="buyer-form">
+                    <input id="name" placeholder="Name" required>
+                    <input id="surname" placeholder="Surname" required>
+                    <input id="mobile" placeholder="Mobile">
+                    <input id="email" type="email" placeholder="Email" required>
+                    <input id="tickets" type="number" min="1" placeholder="Number of tickets" required>
+                    <input id="purchaseDate" type="date" required>
+                    <button onclick="addBuyer()">Add Buyer</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>All Buyers</h2>
+                <div id="buyers"></div>
+            </section>
+
+            <section>
+                <h2>Draw Winner</h2>
+                <button onclick="drawWinner()">Draw Winner</button>
+                <div id="winner"></div>
+            </section>
+        </div>
     </div>
 </body>
 </html>
