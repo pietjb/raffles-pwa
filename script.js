@@ -5,10 +5,47 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let isRecording = false;
 
+// Detect if device is mobile
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Check if screen recording is supported
+function isScreenRecordingSupported() {
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+}
+
 // Screen Recording Functions
 async function startScreenRecording() {
     try {
-        // Request screen capture with audio
+        // Check if screen recording is supported
+        if (!isScreenRecordingSupported()) {
+            // For mobile devices, inform user and provide alternative
+            if (isMobileDevice()) {
+                alert(
+                    '📱 Mobile Device Detected\n\n' +
+                    'Screen recording is not supported on mobile devices.\n\n' +
+                    '💡 Alternative for Audit:\n' +
+                    '• Use another device to video record your screen\n' +
+                    '• Take screenshots during the draw process\n' +
+                    '• Use a screen recording app before starting\n\n' +
+                    'The draw will continue without built-in recording.'
+                );
+            } else {
+                alert(
+                    '❌ Screen Recording Not Supported\n\n' +
+                    'Your browser does not support screen recording.\n\n' +
+                    'Please use a modern browser like:\n' +
+                    '• Chrome/Edge (Desktop)\n' +
+                    '• Firefox (Desktop)\n' +
+                    '• Safari 14.1+ (macOS)\n\n' +
+                    'The draw will continue without recording.'
+                );
+            }
+            return false;
+        }
+
+        // Request screen capture
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
             video: {
                 mediaSource: 'screen',
@@ -16,7 +53,7 @@ async function startScreenRecording() {
                 height: { ideal: 1080 },
                 frameRate: { ideal: 30 }
             },
-            audio: false // Set to true if you want to capture system audio
+            audio: false
         });
 
         recordedChunks = [];
@@ -27,6 +64,9 @@ async function startScreenRecording() {
             options.mimeType = 'video/webm;codecs=vp8';
             if (!MediaRecorder.isTypeSupported(options.mimeType)) {
                 options.mimeType = 'video/webm';
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options.mimeType = 'video/mp4';
+                }
             }
         }
 
@@ -39,13 +79,15 @@ async function startScreenRecording() {
         };
 
         mediaRecorder.onstop = () => {
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const mimeType = mediaRecorder.mimeType || 'video/webm';
+            const blob = new Blob(recordedChunks, { type: mimeType });
             const url = URL.createObjectURL(blob);
             
             // Generate filename with raffle name and timestamp
             const raffleName = currentRaffle ? currentRaffle.replace(/[^a-z0-9]/gi, '_') : 'Raffle';
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-            const filename = `${raffleName}_Draw_Recording_${timestamp}.webm`;
+            const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+            const filename = `${raffleName}_Draw_Recording_${timestamp}.${extension}`;
             
             // Create download link
             const a = document.createElement('a');
@@ -75,7 +117,19 @@ async function startScreenRecording() {
         return true;
     } catch (error) {
         console.error('Failed to start screen recording:', error);
-        alert('Screen recording failed: ' + error.message + '\n\nThe draw will continue without recording.');
+        
+        // Provide user-friendly error message
+        let errorMsg = 'Screen recording failed: ';
+        if (error.name === 'NotAllowedError') {
+            errorMsg += 'Permission denied or screen selection cancelled.';
+        } else if (error.name === 'NotSupportedError') {
+            errorMsg += 'Screen recording not supported on this device/browser.';
+        } else {
+            errorMsg += error.message;
+        }
+        errorMsg += '\n\nThe draw will continue without recording.';
+        
+        alert(errorMsg);
         return false;
     }
 }
@@ -1079,14 +1133,36 @@ async function drawWinner() {
     }
 
     // Ask user if they want to record the draw
-    const shouldRecord = confirm(
-        '📹 Screen Recording for Audit\n\n' +
-        'Would you like to record this draw for audit purposes?\n\n' +
-        '• The recording will capture the entire draw process\n' +
-        '• Video will be automatically saved when draw completes\n' +
-        '• You\'ll need to select which screen/window to record\n\n' +
-        'Click OK to record, or Cancel to proceed without recording.'
-    );
+    let recordPromptMessage = '📹 Screen Recording for Audit\n\n';
+    
+    // Check if device supports screen recording
+    if (!isScreenRecordingSupported()) {
+        if (isMobileDevice()) {
+            recordPromptMessage += '📱 NOTE: Screen recording is not supported on mobile devices.\n\n';
+            recordPromptMessage += '💡 For audit purposes on mobile:\n';
+            recordPromptMessage += '• Use another device to video record your screen\n';
+            recordPromptMessage += '• Take screenshots during the draw\n';
+            recordPromptMessage += '• Use a third-party screen recorder app\n\n';
+            recordPromptMessage += 'Click OK to proceed with the draw (no recording).';
+        } else {
+            recordPromptMessage += '⚠️ Your browser does not support screen recording.\n\n';
+            recordPromptMessage += 'Please use Chrome, Edge, Firefox, or Safari 14.1+\n\n';
+            recordPromptMessage += 'Click OK to proceed with the draw (no recording).';
+        }
+        
+        const proceed = confirm(recordPromptMessage);
+        if (!proceed) {
+            return;
+        }
+    } else {
+        recordPromptMessage += 'Would you like to record this draw for audit purposes?\n\n';
+        recordPromptMessage += '• The recording will capture the entire draw process\n';
+        recordPromptMessage += '• Video will be automatically saved when draw completes\n';
+        recordPromptMessage += '• You\'ll need to select which screen/window to record\n\n';
+        recordPromptMessage += 'Click OK to record, or Cancel to proceed without recording.';
+    }
+    
+    const shouldRecord = isScreenRecordingSupported() && confirm(recordPromptMessage);
 
     try {
         // Start recording if user agreed
