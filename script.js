@@ -503,14 +503,32 @@ async function requestPayment(buyerNumber, ticketCount) {
 
 Thank you for purchasing tickets for the ${raffle.name} raffle.
 
-Raffle purchase details:
-- Number of Tickets: ${ticketCount}
-- Cost per Ticket: R${raffle.ticketCost.toFixed(2)}
-- Total Amount: R${totalAmount}
-- Payment Reference: ${paymentReference}${bankingInfo}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RAFFLE PURCHASE DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Number of Tickets: ${ticketCount}
+• Cost per Ticket: R${raffle.ticketCost.toFixed(2)}
+• Total Amount: R${totalAmount}
+• Payment Reference: ${paymentReference}
+
+${bankingInfo}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CAPITEC PAYMENT OPTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 If you have a Capitec bank account (and banking app), you can use the following payment link to complete your payment quickly and easily:
+
 Capitec Payment Link: ${raffle.paymentLink}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PROOF OF PAYMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Please send proof of payment by responding to this email once the payment is made.
+
+If you have any questions or need further assistance, feel free to contact us.
 
 Best regards,
 Raffle Team`;
