@@ -15,6 +15,15 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 app.logger.setLevel(logging.DEBUG)  # Set logging level to DEBUG for more detailed logs
 
+# Add cache control headers to all responses
+@app.after_request
+def add_header(response):
+    """Add headers to prevent caching"""
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
+
 # Configure upload folder
 UPLOAD_FOLDER = 'uploads'
 THUMBNAIL_FOLDER = 'uploads/thumbnails'

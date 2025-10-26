@@ -13,11 +13,16 @@
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f7fa">
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2c5282">
     
+    <!-- Cache Control -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <!-- Android Icons -->
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
     
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/style.css?v=3">
     
     <!-- Add inline style to ensure login shows first -->
     <style>
@@ -30,8 +35,8 @@
     </style>
     
     <!-- Load config.js BEFORE script.js with cache busting -->
-    <script src="/config.js?v=2"></script>
-    <script src="/script.js?v=2"></script>
+    <script src="/config.js?v=3"></script>
+    <script src="/script.js?v=3"></script>
 
     <!-- PWA Install Prompt Handler -->
     <script>

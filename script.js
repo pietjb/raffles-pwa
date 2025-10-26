@@ -1,5 +1,42 @@
 const ACCESS_PASSWORD = "raffle2024";
 
+// Service Worker Registration and Update Detection
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+                console.log('ServiceWorker registered:', registration.scope);
+                
+                // Check for updates every 60 seconds
+                setInterval(() => {
+                    registration.update();
+                }, 60000);
+                
+                // Listen for new service worker waiting
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // New service worker available, prompt user
+                            if (confirm('A new version is available! Reload to update?')) {
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                window.location.reload();
+                            }
+                        }
+                    });
+                });
+            })
+            .catch((error) => {
+                console.log('ServiceWorker registration failed:', error);
+            });
+        
+        // Reload page when new service worker takes control
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            window.location.reload();
+        });
+    });
+}
+
 // IMMEDIATELY enforce login screen on script load (before DOMContentLoaded)
 if (typeof document !== 'undefined') {
     // This runs as soon as the script loads
