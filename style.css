@@ -80,36 +80,185 @@ section {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-input {
+/* Form Section Styling */
+.form-section {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.form-section-title {
+    margin: 0 0 15px 0;
+    font-size: 1.1em;
+    color: #2c5282;
+    font-weight: 600;
+    border-bottom: 2px solid #4299e1;
+    padding-bottom: 8px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
     display: block;
-    width: 100%;
-    margin: 10px 0;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #2d3748;
+    font-size: 0.95em;
 }
 
-input:focus {
-    outline: none;
-    border-color: #4299e1;
-    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+.form-group .required {
+    color: #e53e3e;
+    font-weight: bold;
 }
 
-button {
-    background: #4299e1;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
+.form-group .optional {
+    color: #718096;
+    font-weight: normal;
+    font-size: 0.9em;
+}
+
+.form-hint {
+    display: block;
+    margin-top: 5px;
+    color: #718096;
+    font-size: 0.85em;
+    font-style: italic;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}
+
+.form-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #cbd5e0;
+}
+
+.form-checkbox input[type="checkbox"] {
+    width: auto;
+    margin: 0 10px 0 0;
     cursor: pointer;
 }
 
-button:hover {
-    background: #3182ce;
+.form-checkbox label {
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
+    color: #2d3748;
 }
 
-button:active {
-    transform: translateY(1px);
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.form-actions button {
+    flex: 1;
+}
+
+@media (max-width: 480px) {
+    .form-actions {
+        flex-direction: column;
+    }
+}
+
+/* Buyer Form Specific */
+.buyer-form {
+    max-width: 100%;
+}
+
+.buyer-form .form-actions button {
+    flex: none;
+    min-width: 200px;
+}
+
+input, select {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 1em;
+    transition: all 0.2s;
+    background: white;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+input::placeholder {
+    color: #a0aec0;
+}
+
+select {
+    cursor: pointer;
+}
+
+.file-input {
+    padding: 8px;
+    border: 2px dashed #cbd5e0;
+    background: white;
+    cursor: pointer;
+}
+
+.file-input:hover {
+    border-color: #4299e1;
+    background: #f7fafc;
+}
+
+button, .btn-primary, .btn-secondary {
+    background: #4299e1;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+button:hover, .btn-primary:hover {
+    background: #3182ce;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+button:active, .btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary, button.secondary {
+    background: #718096;
+}
+
+.btn-secondary:hover, button.secondary:hover {
+    background: #4a5568;
 }
 
 #buyers > div {

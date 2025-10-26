@@ -101,41 +101,95 @@
         <!-- New Raffle Form Section -->
         <section id="new-raffle-form" style="display: none;">
             <h2>Create New Raffle</h2>
-            <input id="raffle-name" placeholder="Raffle Name" required>
-            <input id="draw-date" type="date" required>
-            <input id="prize" placeholder="Prize Description" required>
-            <input id="ticket-cost" type="number" step="0.01" min="0" placeholder="Ticket Cost (R)" required>
-            <input id="payment-link" type="url" placeholder="Capitec Payment Link URL (for Capitec account holders only)" required>
             
-            <div style="margin: 15px 0;">
-                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Raffle Advertisement Image (optional)</label>
-                <input id="raffle-image" type="file" accept="image/*" style="display: block;">
-                <small style="color: #666;">Upload an image to advertise your raffle</small>
+            <div class="form-section">
+                <h3 class="form-section-title">Basic Information</h3>
+                <div class="form-group">
+                    <label for="raffle-name">Raffle Name <span class="required">*</span></label>
+                    <input id="raffle-name" placeholder="Enter raffle name" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="draw-date">Draw Date <span class="required">*</span></label>
+                        <input id="draw-date" type="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ticket-cost">Ticket Cost (R) <span class="required">*</span></label>
+                        <input id="ticket-cost" type="number" step="5" min="10" value="10" placeholder="10" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="prize">Prize Description <span class="required">*</span></label>
+                    <input id="prize" placeholder="Describe the prize" required>
+                </div>
             </div>
             
-            <div style="margin: 15px 0;">
-                <label>
+            <div class="form-section">
+                <h3 class="form-section-title">Payment Details</h3>
+                <div class="form-group">
+                    <label for="payment-link">Capitec Payment Link <span class="required">*</span></label>
+                    <input id="payment-link" type="url" placeholder="https://paylink.capitecbank.co.za/..." required>
+                    <small class="form-hint">For Capitec account holders only</small>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3 class="form-section-title">Advertisement Image</h3>
+                <div class="form-group">
+                    <label for="raffle-image">Upload Image <span class="optional">(optional)</span></label>
+                    <input id="raffle-image" type="file" accept="image/*" class="file-input">
+                    <small class="form-hint">Upload an image to advertise your raffle</small>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <div class="form-checkbox">
                     <input type="checkbox" id="banking-required" onchange="toggleBankingDetails(this.checked)">
-                    Banking details required
-                </label>
+                    <label for="banking-required">Include banking details for payments</label>
+                </div>
             </div>
             
-            <div id="banking-details-section" style="display: none;">
-                <h3>Banking Details</h3>
-                <input id="account-owner" placeholder="Account Owner">
-                <input id="bank-name" placeholder="Bank Name">
-                <input id="branch-code" placeholder="Branch Code">
-                <input id="account-number" placeholder="Account Number">
-                <select id="account-type">
-                    <option value="">Select Account Type</option>
-                    <option value="Savings">Savings</option>
-                    <option value="Cheque">Cheque</option>
-                    <option value="Current">Current</option>
-                </select>
+            <div id="banking-details-section" class="form-section" style="display: none;">
+                <h3 class="form-section-title">Banking Details</h3>
+                <div class="form-group">
+                    <label for="account-owner">Account Owner</label>
+                    <input id="account-owner" placeholder="Full name on account">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bank-name">Bank Name</label>
+                        <input id="bank-name" placeholder="e.g., Capitec Bank">
+                    </div>
+                    <div class="form-group">
+                        <label for="branch-code">Branch Code</label>
+                        <input id="branch-code" placeholder="e.g., 470010">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="account-number">Account Number</label>
+                        <input id="account-number" placeholder="Enter account number">
+                    </div>
+                    <div class="form-group">
+                        <label for="account-type">Account Type</label>
+                        <select id="account-type">
+                            <option value="">Select type</option>
+                            <option value="Savings">Savings</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Current">Current</option>
+                        </select>
+                    </div>
+                </div>
             </div>
             
-            <button onclick="createRaffle()">Create Raffle</button>
-            <button onclick="showRaffleSelector()" class="secondary">Cancel</button>
+            <div class="form-actions">
+                <button onclick="createRaffle()" class="btn-primary">Create Raffle</button>
+                <button onclick="showRaffleSelector()" class="btn-secondary">Cancel</button>
+            </div>
         </section>
 
         <!-- Raffle Content Section -->
@@ -155,13 +209,48 @@
             <section>
                 <h2>Add Buyer</h2>
                 <div class="buyer-form">
-                    <input id="name" placeholder="Name" required>
-                    <input id="surname" placeholder="Surname" required>
-                    <input id="mobile" placeholder="Mobile">
-                    <input id="email" type="email" placeholder="Email" required>
-                    <input id="tickets" type="number" min="1" placeholder="Number of tickets" required>
-                    <input id="purchaseDate" type="date" required>
-                    <button onclick="addBuyer()">Add Buyer</button>
+                    <div class="form-section">
+                        <h3 class="form-section-title">Buyer Information</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name">First Name <span class="required">*</span></label>
+                                <input id="name" placeholder="Enter first name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="surname">Surname <span class="required">*</span></label>
+                                <input id="surname" placeholder="Enter surname" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="mobile">Mobile Number <span class="optional">(optional)</span></label>
+                                <input id="mobile" type="tel" placeholder="e.g., 082 123 4567">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address <span class="required">*</span></label>
+                                <input id="email" type="email" placeholder="email@example.com" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3 class="form-section-title">Purchase Details</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tickets">Number of Tickets <span class="required">*</span></label>
+                                <input id="tickets" type="number" min="1" value="1" placeholder="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="purchaseDate">Purchase Date <span class="required">*</span></label>
+                                <input id="purchaseDate" type="date" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button onclick="addBuyer()" class="btn-primary">Add Buyer</button>
+                    </div>
                 </div>
             </section>
 
