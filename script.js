@@ -1003,10 +1003,16 @@ async function requestPayment(buyerNumber, ticketCount) {
             }
 
         const emailSubject = `${raffle.name} - Payment Request for Raffle Tickets`;
+        
+        // Get full URL for raffle image/thumbnail if available
+        const baseUrl = window.location.origin;
+        const imageInfo = (raffle.thumbnail || raffle.image) ? 
+            `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🖼️ RAFFLE IMAGE\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nView the raffle image here:\n${baseUrl}/uploads/${raffle.thumbnail ? 'thumbnails/' + raffle.thumbnail : raffle.image}\n` : '';
+        
         const emailBody = `Dear ${buyer.name},
 
 Thank you for purchasing tickets for the ${raffle.name} raffle.
-
+${imageInfo}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 RAFFLE PURCHASE DETAILS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1121,6 +1127,11 @@ async function togglePaymentStatus(buyerNumber, paid) {
             // Calculate total amount
             const totalAmount = (buyer.tickets * raffle.ticketCost).toFixed(2);
             
+            // Get full URL for raffle image/thumbnail if available
+            const baseUrl = window.location.origin;
+            const imageInfo = (raffle.thumbnail || raffle.image) ? 
+                `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🖼️ RAFFLE IMAGE\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nView the raffle image here:\n${baseUrl}/uploads/${raffle.thumbnail ? 'thumbnails/' + raffle.thumbnail : raffle.image}\n` : '';
+            
             // Create email subject and body
             const emailSubject = `Payment Confirmed - ${raffle.name}`;
             const emailBody = `Dear ${buyer.name} ${buyer.surname},
@@ -1128,7 +1139,7 @@ async function togglePaymentStatus(buyerNumber, paid) {
 🎉 RAFFLE PAYMENT CONFIRMED 🎉
 
 Thank you for your purchase! We're excited to confirm that your payment has been received and processed successfully.
-
+${imageInfo}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎟️ YOUR RAFFLE ENTRY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1651,9 +1662,14 @@ async function showWinnerDetails(raffleId) {
             throw new Error('Winner contact details not found');
         }
         
+        // Get full URL for raffle image/thumbnail if available
+        const baseUrl = window.location.origin;
+        const imageInfo = (raffle.thumbnail || raffle.image) ? 
+            `\n\n🖼️ Raffle Image: ${baseUrl}/uploads/${raffle.thumbnail ? 'thumbnails/' + raffle.thumbnail : raffle.image}` : '';
+        
         // Create email content
         const emailSubject = `${raffle.name} - Winner Announcement`;
-        const emailBody = `Dear ${winner.name} ${winner.surname},\n\nCongratulations! You are the winner of our ${raffle.name} raffle with your ticket #${winningTicket}.\n\nYour prize is: ${raffle.prize}\n\nBest regards,\n${raffle.organizerName || 'Raffle Team'}`;
+        const emailBody = `Dear ${winner.name} ${winner.surname},\n\nCongratulations! You are the winner of our ${raffle.name} raffle with your ticket #${winningTicket}.\n\nYour prize is: ${raffle.prize}${imageInfo}\n\nBest regards,\n${raffle.organizerName || 'Raffle Team'}`;
         
         // Create mailto link
         const mailtoLink = `mailto:${winner.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
