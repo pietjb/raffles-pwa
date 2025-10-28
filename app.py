@@ -13,7 +13,7 @@ from PIL import Image
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
-app.logger.setLevel(logging.DEBUG)  # Set logging level to DEBUG for more detailed logs
+app.logger.setLevel(logging.INFO)  # Set logging level to INFO for production
 
 # Add cache control headers to all responses
 @app.after_request
@@ -724,4 +724,6 @@ def serve_config():
     return send_from_directory('.', 'config.js')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Use environment variable to control debug mode
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(debug=debug_mode, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

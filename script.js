@@ -218,36 +218,24 @@ if (typeof document !== 'undefined') {
 }
 
 function verifyAccess() {
-    console.log('verifyAccess called');
-    
     const passwordInput = document.getElementById('access-password');
     const password = passwordInput ? passwordInput.value : '';
     const errorDiv = document.getElementById('login-error');
     
-    console.log('Password entered:', password);
-    console.log('Expected password:', ACCESS_PASSWORD);
-    console.log('Match:', password === ACCESS_PASSWORD);
-    
     if (password === ACCESS_PASSWORD) {
-        console.log('Password correct! Showing main content...');
-        
         try {
             // Hide login screen - use setProperty with important to override inline styles
             const loginScreen = document.getElementById('login-screen');
-            console.log('Login screen element:', loginScreen);
             if (loginScreen) {
                 loginScreen.style.setProperty('display', 'none', 'important');
                 loginScreen.style.setProperty('visibility', 'hidden', 'important');
-                console.log('Login screen hidden');
             }
             
             // Show main content - use setProperty with important to override inline styles
             const appContent = document.getElementById('app-content');
-            console.log('App content element:', appContent);
             if (appContent) {
                 appContent.style.setProperty('display', 'block', 'important');
                 appContent.style.setProperty('visibility', 'visible', 'important');
-                console.log('App content shown');
             }
             
             // Show raffle selector
@@ -293,13 +281,8 @@ function verifyAccess() {
     }
 }
 
-// Remove the CONFIG definition comments and add verification
-console.log('Checking CONFIG availability:', typeof CONFIG !== 'undefined' ? 'Available' : 'Not Available');
-console.log('CONFIG object:', window.CONFIG || CONFIG);
-
 // Use window.CONFIG as fallback
 const APP_CONFIG = window.CONFIG || CONFIG || { baseUrl: window.location.origin };
-console.log('Using APP_CONFIG:', APP_CONFIG);
 
 window.onerror = function(msg, url, lineNo, columnNo, error) {
     console.error('Error: ', msg, '\nURL: ', url, '\nLine: ', lineNo, '\nColumn: ', columnNo, '\nError object: ', error);
@@ -1006,12 +989,10 @@ async function requestPayment(buyerNumber, ticketCount) {
         
         // Get full URL for raffle image/thumbnail if available
         const baseUrl = window.location.origin;
-        console.log('Payment Request - Raffle thumbnail:', raffle.thumbnail, 'Raffle image:', raffle.image);
         const imageUrl = raffle.thumbnail ? `${baseUrl}/uploads/thumbnails/${raffle.thumbnail}` : 
                          raffle.image ? `${baseUrl}/uploads/${raffle.image}` : '';
         const imageInfo = imageUrl ? 
             `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🖼️ RAFFLE IMAGE\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nView the raffle image: ${imageUrl}\n` : '';
-        console.log('Payment Request - Image info to add:', imageInfo);
         
         const emailBody = `Dear ${buyer.name},
 
@@ -1133,12 +1114,10 @@ async function togglePaymentStatus(buyerNumber, paid) {
             
             // Get full URL for raffle image/thumbnail if available
             const baseUrl = window.location.origin;
-            console.log('Payment Confirmation - Raffle thumbnail:', raffle.thumbnail, 'Raffle image:', raffle.image);
             const imageUrl = raffle.thumbnail ? `${baseUrl}/uploads/thumbnails/${raffle.thumbnail}` : 
                              raffle.image ? `${baseUrl}/uploads/${raffle.image}` : '';
             const imageInfo = imageUrl ? 
                 `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🖼️ RAFFLE IMAGE\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nView the raffle image: ${imageUrl}\n` : '';
-            console.log('Payment Confirmation - Image info to add:', imageInfo);
             
             // Create email subject and body
             const emailSubject = `Payment Confirmed - ${raffle.name}`;
@@ -1672,11 +1651,9 @@ async function showWinnerDetails(raffleId) {
         
         // Get full URL for raffle image/thumbnail if available
         const baseUrl = window.location.origin;
-        console.log('Winner Notification - Raffle thumbnail:', raffle.thumbnail, 'Raffle image:', raffle.image);
         const imageUrl = raffle.thumbnail ? `${baseUrl}/uploads/thumbnails/${raffle.thumbnail}` : 
                          raffle.image ? `${baseUrl}/uploads/${raffle.image}` : '';
         const imageInfo = imageUrl ? `\n\n🖼️ Raffle Image: ${imageUrl}` : '';
-        console.log('Winner Notification - Image info to add:', imageInfo);
         
         // Create email content
         const emailSubject = `${raffle.name} - Winner Announcement`;
