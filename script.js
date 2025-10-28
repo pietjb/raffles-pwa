@@ -1,4 +1,4 @@
-const ACCESS_PASSWORD = "raffle2024";
+const ACCESS_PASSWORD = "nicolas2025";
 
 // Screen Recording Variables
 let mediaRecorder = null;
@@ -1006,8 +1006,12 @@ async function requestPayment(buyerNumber, ticketCount) {
         
         // Get full URL for raffle image/thumbnail if available
         const baseUrl = window.location.origin;
-        const imageInfo = (raffle.thumbnail || raffle.image) ? 
-            `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🖼️ RAFFLE IMAGE\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nView the raffle image here:\n${baseUrl}/uploads/${raffle.thumbnail ? 'thumbnails/' + raffle.thumbnail : raffle.image}\n` : '';
+        console.log('Payment Request - Raffle thumbnail:', raffle.thumbnail, 'Raffle image:', raffle.image);
+        const imageUrl = raffle.thumbnail ? `${baseUrl}/uploads/thumbnails/${raffle.thumbnail}` : 
+                         raffle.image ? `${baseUrl}/uploads/${raffle.image}` : '';
+        const imageInfo = imageUrl ? 
+            `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🖼️ RAFFLE IMAGE\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nView the raffle image: ${imageUrl}\n` : '';
+        console.log('Payment Request - Image info to add:', imageInfo);
         
         const emailBody = `Dear ${buyer.name},
 
@@ -1129,8 +1133,12 @@ async function togglePaymentStatus(buyerNumber, paid) {
             
             // Get full URL for raffle image/thumbnail if available
             const baseUrl = window.location.origin;
-            const imageInfo = (raffle.thumbnail || raffle.image) ? 
-                `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🖼️ RAFFLE IMAGE\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nView the raffle image here:\n${baseUrl}/uploads/${raffle.thumbnail ? 'thumbnails/' + raffle.thumbnail : raffle.image}\n` : '';
+            console.log('Payment Confirmation - Raffle thumbnail:', raffle.thumbnail, 'Raffle image:', raffle.image);
+            const imageUrl = raffle.thumbnail ? `${baseUrl}/uploads/thumbnails/${raffle.thumbnail}` : 
+                             raffle.image ? `${baseUrl}/uploads/${raffle.image}` : '';
+            const imageInfo = imageUrl ? 
+                `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🖼️ RAFFLE IMAGE\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nView the raffle image: ${imageUrl}\n` : '';
+            console.log('Payment Confirmation - Image info to add:', imageInfo);
             
             // Create email subject and body
             const emailSubject = `Payment Confirmed - ${raffle.name}`;
@@ -1664,8 +1672,11 @@ async function showWinnerDetails(raffleId) {
         
         // Get full URL for raffle image/thumbnail if available
         const baseUrl = window.location.origin;
-        const imageInfo = (raffle.thumbnail || raffle.image) ? 
-            `\n\n🖼️ Raffle Image: ${baseUrl}/uploads/${raffle.thumbnail ? 'thumbnails/' + raffle.thumbnail : raffle.image}` : '';
+        console.log('Winner Notification - Raffle thumbnail:', raffle.thumbnail, 'Raffle image:', raffle.image);
+        const imageUrl = raffle.thumbnail ? `${baseUrl}/uploads/thumbnails/${raffle.thumbnail}` : 
+                         raffle.image ? `${baseUrl}/uploads/${raffle.image}` : '';
+        const imageInfo = imageUrl ? `\n\n🖼️ Raffle Image: ${imageUrl}` : '';
+        console.log('Winner Notification - Image info to add:', imageInfo);
         
         // Create email content
         const emailSubject = `${raffle.name} - Winner Announcement`;
