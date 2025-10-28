@@ -1,4 +1,4 @@
-const CACHE_VERSION = 7;
+const CACHE_VERSION = 9;
 const CACHE_NAME = `raffle-system-v${CACHE_VERSION}`;
 const ASSETS_TO_CACHE = [
   '/',
@@ -25,10 +25,14 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   
+  // Only handle GET requests - skip POST, PUT, DELETE, etc.
+  if (request.method !== 'GET') {
+    return;
+  }
+  
   // Network-first for HTML and API calls
-  if (request.method === 'GET' && 
-      (request.headers.get('accept').includes('text/html') || 
-       url.pathname.startsWith('/api/'))) {
+  if (request.headers.get('accept').includes('text/html') || 
+      url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request)
         .then((response) => {

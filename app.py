@@ -148,16 +148,17 @@ def create_raffle():
         
         # Get form data instead of JSON
         name = request.form.get('name')
+        organizer_name = request.form.get('organizerName')
         draw_date = request.form.get('drawDate')
         prize = request.form.get('prize')
         ticket_cost = request.form.get('ticketCost')
         payment_link = request.form.get('paymentLink')
         banking_details_json = request.form.get('bankingDetails')
         
-        app.logger.info(f"Form data: name={name}, drawDate={draw_date}, prize={prize}")
+        app.logger.info(f"Form data: name={name}, organizerName={organizer_name}, drawDate={draw_date}, prize={prize}")
         
-        if not all([name, draw_date, prize, ticket_cost, payment_link]):
-            missing = [f for f, v in [("name", name), ("drawDate", draw_date), ("prize", prize), 
+        if not all([name, organizer_name, draw_date, prize, ticket_cost, payment_link]):
+            missing = [f for f, v in [("name", name), ("organizerName", organizer_name), ("drawDate", draw_date), ("prize", prize), 
                                      ("ticketCost", ticket_cost), ("paymentLink", payment_link)] if not v]
             app.logger.error(f"Missing required fields: {missing}")
             return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
@@ -201,6 +202,7 @@ def create_raffle():
         new_raffle = {
             'id': new_id,
             'name': name,
+            'organizerName': organizer_name,
             'drawDate': draw_date,
             'prize': prize,
             'ticketCost': float(ticket_cost),
@@ -259,16 +261,17 @@ def update_raffle(raffle_id):
         
         # Get form data
         name = request.form.get('name')
+        organizer_name = request.form.get('organizerName')
         draw_date = request.form.get('drawDate')
         prize = request.form.get('prize')
         ticket_cost = request.form.get('ticketCost')
         payment_link = request.form.get('paymentLink')
         banking_details_json = request.form.get('bankingDetails')
         
-        app.logger.info(f"Form data: name={name}, drawDate={draw_date}, prize={prize}")
+        app.logger.info(f"Form data: name={name}, organizerName={organizer_name}, drawDate={draw_date}, prize={prize}")
         
-        if not all([name, draw_date, prize, ticket_cost, payment_link]):
-            missing = [f for f, v in [("name", name), ("drawDate", draw_date), ("prize", prize), 
+        if not all([name, organizer_name, draw_date, prize, ticket_cost, payment_link]):
+            missing = [f for f, v in [("name", name), ("organizerName", organizer_name), ("drawDate", draw_date), ("prize", prize), 
                                      ("ticketCost", ticket_cost), ("paymentLink", payment_link)] if not v]
             app.logger.error(f"Missing required fields: {missing}")
             return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
@@ -338,6 +341,7 @@ def update_raffle(raffle_id):
         updated_raffle = {
             'id': raffle_id,
             'name': name,
+            'organizerName': organizer_name,
             'drawDate': draw_date,
             'prize': prize,
             'ticketCost': float(ticket_cost),
@@ -596,17 +600,36 @@ def update_payment_status(raffle_id, buyer_number):
         raffle_buyers = buyers_data.get(str(raffle_id), [])
         buyer_number = int(buyer_number)
         
+        buyer_found = None
         for buyer in raffle_buyers:
             if buyer.get('buyerNumber') == buyer_number:
                 buyer['paymentReceived'] = data['paymentReceived']
+                buyer_found = buyer
                 break
+
+        if not buyer_found:
+            return jsonify({"error": "Buyer not found"}), 404
 
         buyers_data[str(raffle_id)] = raffle_buyers
         
         with open(BUYERS_FILE, 'w') as f:
             json.dump(buyers_data, f, indent=2)
         
-        return jsonify({"message": "Payment status updated successfully"}), 200
+        # If marking as paid, return buyer and raffle data for email generation
+        response_data = {
+            "message": "Payment status updated successfully"
+        }
+        
+        if data['paymentReceived'] and data.get('sendEmail', False):
+            # Get raffle details for email
+            raffles_data = load_raffles()
+            raffle = next((r for r in raffles_data['raffles'] if r['id'] == raffle_id), None)
+            
+            if raffle:
+                response_data['buyer'] = buyer_found
+                response_data['raffle'] = raffle
+        
+        return jsonify(response_data), 200
         
     except Exception as e:
         app.logger.error(f"Error updating payment status: {str(e)}")

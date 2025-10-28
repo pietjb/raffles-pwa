@@ -533,6 +533,7 @@ function showRaffleSelector() {
 
 async function createRaffle() {
     const name = document.getElementById("raffle-name").value;
+    const organizerName = document.getElementById("organizer-name").value;
     const drawDate = document.getElementById("draw-date").value;
     const prize = document.getElementById("prize").value;
     const ticketCost = parseFloat(document.getElementById("ticket-cost").value);
@@ -541,7 +542,7 @@ async function createRaffle() {
     const imageFile = document.getElementById("raffle-image").files[0];
 
     // Validate basic fields
-    if (!name || !drawDate || !prize || !ticketCost || !paymentLink) {
+    if (!name || !organizerName || !drawDate || !prize || !ticketCost || !paymentLink) {
         alert("Please fill all required fields");
         return;
     }
@@ -549,6 +550,7 @@ async function createRaffle() {
     // Build FormData for file upload
     const formData = new FormData();
     formData.append('name', name);
+    formData.append('organizerName', organizerName);
     formData.append('drawDate', drawDate);
     formData.append('prize', prize);
     formData.append('ticketCost', ticketCost);
@@ -606,6 +608,7 @@ async function createRaffle() {
         
         // Clear form
         document.getElementById("raffle-name").value = "";
+        document.getElementById("organizer-name").value = "";
         document.getElementById("draw-date").value = "";
         document.getElementById("prize").value = "";
         document.getElementById("ticket-cost").value = "";
@@ -646,6 +649,7 @@ async function selectRaffle(raffleId) {
         // Update header
         document.getElementById("current-raffle-name").textContent = raffle.name;
         document.getElementById("raffle-id-badge").textContent = `ID: ${raffle.id}`;
+        document.getElementById("organizer-name-display").textContent = raffle.organizerName || 'Not specified';
         document.getElementById("draw-date-display").textContent = new Date(raffle.drawDate).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' });
         document.getElementById("prize-display").textContent = raffle.prize;
         document.getElementById("ticket-cost-display").textContent = `R${raffle.ticketCost.toFixed(2)}`;
@@ -709,6 +713,7 @@ function editRaffle() {
     
     // Populate the form with current raffle data
     document.getElementById('raffle-name').value = raffle.name;
+    document.getElementById('organizer-name').value = raffle.organizerName || '';
     document.getElementById('draw-date').value = raffle.drawDate;
     document.getElementById('prize').value = raffle.prize;
     document.getElementById('ticket-cost').value = raffle.ticketCost;
@@ -744,6 +749,7 @@ async function updateRaffle() {
     }
     
     const name = document.getElementById("raffle-name").value;
+    const organizerName = document.getElementById("organizer-name").value;
     const drawDate = document.getElementById("draw-date").value;
     const prize = document.getElementById("prize").value;
     const ticketCost = parseFloat(document.getElementById("ticket-cost").value);
@@ -752,7 +758,7 @@ async function updateRaffle() {
     const imageFile = document.getElementById("raffle-image").files[0];
 
     // Validate basic fields
-    if (!name || !drawDate || !prize || !ticketCost || !paymentLink) {
+    if (!name || !organizerName || !drawDate || !prize || !ticketCost || !paymentLink) {
         alert("Please fill all required fields");
         return;
     }
@@ -760,6 +766,7 @@ async function updateRaffle() {
     // Build FormData for file upload
     const formData = new FormData();
     formData.append('name', name);
+    formData.append('organizerName', organizerName);
     formData.append('drawDate', drawDate);
     formData.append('prize', prize);
     formData.append('ticketCost', ticketCost);
@@ -1028,7 +1035,7 @@ Please send proof of payment by responding to this email once the payment is mad
 If you have any questions or need further assistance, feel free to contact us.
 
 Best regards,
-Raffle Team`;
+${raffle.organizerName || 'Raffle Team'}`;
 
         // Check if mobile device
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -1060,19 +1067,127 @@ Raffle Team`;
 async function togglePaymentStatus(buyerNumber, paid) {
     try {
         console.log(`Updating payment status for buyer #${buyerNumber} to ${paid}`);
+        
+        // Ask user if they want to send confirmation email when marking as paid
+        let sendEmail = false;
+        if (paid) {
+            sendEmail = confirm(
+                '✅ Payment marked as received!\n\n' +
+                '📧 Would you like to send a payment confirmation email to the buyer?\n\n' +
+                'The email will include:\n' +
+                '• Thank you message\n' +
+                '• Ticket numbers\n' +
+                '• Payment amount\n' +
+                '• Prize details\n' +
+                '• Draw date\n\n' +
+                'Send confirmation email now?'
+            );
+        }
+        
         const res = await fetch(`/api/buyers/${currentRaffle}/${buyerNumber}/payment`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ 
-                paymentReceived: paid 
+                paymentReceived: paid,
+                sendEmail: sendEmail
             })
         });
 
         if (!res.ok) {
             const error = await res.json();
             throw new Error(error.error || 'Failed to update payment status');
+        }
+
+        const result = await res.json();
+        
+        // If user wants to send email and we have the data, open mailto
+        if (sendEmail && result.buyer && result.raffle) {
+            const buyer = result.buyer;
+            const raffle = result.raffle;
+            
+            // Format ticket numbers
+            const ticketList = buyer.ticket_numbers.map(t => `#${t}`).join(', ');
+            
+            // Format draw date
+            const drawDate = new Date(raffle.drawDate);
+            const formattedDate = drawDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            // Calculate total amount
+            const totalAmount = (buyer.tickets * raffle.ticketCost).toFixed(2);
+            
+            // Create email subject and body
+            const emailSubject = `Payment Confirmed - ${raffle.name}`;
+            const emailBody = `Dear ${buyer.name} ${buyer.surname},
+
+🎉 RAFFLE PAYMENT CONFIRMED 🎉
+
+Thank you for your purchase! We're excited to confirm that your payment has been received and processed successfully.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎟️ YOUR RAFFLE ENTRY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Raffle: ${raffle.name}
+Number of Tickets: ${buyer.tickets}
+Total Amount Paid: R${totalAmount}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎫 YOUR TICKET NUMBERS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${ticketList}
+
+Keep these numbers safe! You'll need them if you win.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏆 PRIZE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${raffle.prize}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 DRAW DATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${formattedDate}
+
+Mark your calendar! The winner will be announced on this date.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Good luck! We'll notify you if you're the winner.
+
+If you have any questions, please don't hesitate to contact us.
+
+Best regards,
+${raffle.organizerName || 'Raffle Team'}`;
+
+            // Check if mobile device
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                // On mobile, use mailto which will open the default email client
+                const mailtoUrl = `mailto:${encodeURIComponent(buyer.email)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+                window.location.href = mailtoUrl;
+            } else {
+                // On desktop, try Gmail web first, fallback to mailto
+                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(buyer.email)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+                
+                // Try to open Gmail in new tab
+                const gmailWindow = window.open(gmailUrl, '_blank');
+                
+                // If popup was blocked, fallback to mailto
+                if (!gmailWindow || gmailWindow.closed || typeof gmailWindow.closed === 'undefined') {
+                    const mailtoUrl = `mailto:${encodeURIComponent(buyer.email)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+                    window.location.href = mailtoUrl;
+                }
+            }
         }
 
         // Reload the buyers list to update UI including summary stats
@@ -1183,10 +1298,21 @@ async function drawWinner() {
         const narrativeElement = document.getElementById("draw-narrative");
         const winnerElement = document.getElementById("winner");
         const startButton = document.getElementById("btn-start-draw");
+        const prizeDisplay = document.getElementById("draw-prize-display");
         
         // Clear previous results
         winnerElement.innerHTML = '';
         narrativeElement.innerHTML = '';
+        
+        // Show and populate prize display
+        const raffleData = window.currentRaffleData;
+        const prizeName = raffleData ? raffleData.prize : 'Amazing Prize';
+        
+        prizeDisplay.innerHTML = `
+            <div class="prize-label">🎁 TODAY'S PRIZE</div>
+            <div class="prize-name">${prizeName}</div>
+        `;
+        prizeDisplay.style.display = 'block';
         
         // Disable button
         startButton.disabled = true;
@@ -1251,7 +1377,7 @@ async function drawWinner() {
         const totalBuyers = buyers.length;
         const excludedBuyers = unpaidBuyers.length;
 
-        // Stage 1: Introduction with payment status
+        // Stage 1: Introduction with payment status (prize now shown separately above)
         const introMessage = excludedBuyers > 0 
             ? `<p>We have <strong>${totalTickets} paid tickets</strong> from <strong>${totalBuyers} paid participants</strong></p>
                <p class="narrative-subtext" style="color: #e53e3e;">⚠️ ${excludedBuyers} unpaid buyer(s) excluded from draw</p>
@@ -1324,6 +1450,9 @@ async function drawWinner() {
 
         // Stage 6: Winner reveal with celebration
         narrativeElement.innerHTML = '';
+        
+        // Keep prize display visible during celebration
+        
         winnerElement.innerHTML = `
             <div class="winner-reveal winner-entrance">
                 <div class="celebration-burst">🎊</div>
@@ -1335,7 +1464,7 @@ async function drawWinner() {
                 </div>
                 <div class="winner-actions">
                     <button class="contact-winner-btn" onclick="showWinnerDetails('${currentRaffle}')">
-                        � Winner Details
+                        👤 Winner Details
                     </button>
                     <button class="celebrate-btn" onclick="celebrateAgain()">
                         🎆 Celebrate Again!
@@ -1367,6 +1496,13 @@ async function drawWinner() {
         if (isRecording) {
             stopScreenRecording();
         }
+        
+        // Hide prize display on error
+        const prizeDisplay = document.getElementById("draw-prize-display");
+        if (prizeDisplay) {
+            prizeDisplay.style.display = 'none';
+        }
+        
         const narrativeElement = document.getElementById("draw-narrative");
         const startButton = document.getElementById("btn-start-draw");
         
@@ -1517,7 +1653,7 @@ async function showWinnerDetails(raffleId) {
         
         // Create email content
         const emailSubject = `${raffle.name} - Winner Announcement`;
-        const emailBody = `Dear ${winner.name} ${winner.surname},\n\nCongratulations! You are the winner of our ${raffle.name} raffle with your ticket #${winningTicket}.\n\nYour prize is: ${raffle.prize}\n\nBest regards,\nRaffle Team`;
+        const emailBody = `Dear ${winner.name} ${winner.surname},\n\nCongratulations! You are the winner of our ${raffle.name} raffle with your ticket #${winningTicket}.\n\nYour prize is: ${raffle.prize}\n\nBest regards,\n${raffle.organizerName || 'Raffle Team'}`;
         
         // Create mailto link
         const mailtoLink = `mailto:${winner.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
