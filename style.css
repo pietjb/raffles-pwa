@@ -48,10 +48,37 @@
     color: white;
 }
 
-.login-icon {
-    font-size: 4em;
-    margin-bottom: 15px;
+.app-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    animation: fadeInDown 0.6s ease;
+}
+
+.logo-image {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
     animation: bounce 2s ease-in-out infinite;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+}
+
+.logo-icon {
+    font-size: 3.5em;
+    animation: bounce 2s ease-in-out infinite;
+}
+
+.logo-text {
+    font-size: 3em;
+    font-weight: 900;
+    background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 @keyframes bounce {
@@ -59,10 +86,21 @@
     50% { transform: translateY(-10px); }
 }
 
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .login-title {
     margin: 0;
-    font-size: 1.8em;
-    font-weight: 700;
+    font-size: 1.5em;
+    font-weight: 600;
     color: white;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
@@ -209,24 +247,24 @@ section {
 
 /* Form Section Styling */
 .form-section {
-    margin: 20px 0;
-    padding: 20px;
+    margin: 15px 0;
+    padding: 16px;
     background: #f8f9fa;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
 }
 
 .form-section-title {
-    margin: 0 0 15px 0;
-    font-size: 1.1em;
+    margin: 0 0 12px 0;
+    font-size: 1.05em;
     color: #2c5282;
     font-weight: 600;
     border-bottom: 2px solid #4299e1;
-    padding-bottom: 8px;
+    padding-bottom: 6px;
 }
 
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 12px;
 }
 
 .form-group label {
@@ -259,8 +297,8 @@ section {
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 15px;
+    gap: 12px;
+    margin-bottom: 0;
 }
 
 @media (max-width: 768px) {
@@ -295,8 +333,8 @@ section {
 .form-actions {
     display: flex;
     gap: 10px;
-    margin-top: 25px;
-    padding-top: 20px;
+    margin-top: 18px;
+    padding-top: 16px;
     border-top: 1px solid #e2e8f0;
 }
 
@@ -318,12 +356,21 @@ section {
 .buyer-form .form-actions button {
     flex: none;
     min-width: 200px;
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%) !important;
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.buyer-form .form-actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(66, 153, 225, 0.5);
 }
 
 input, select {
     display: block;
     width: 100%;
-    padding: 10px 12px;
+    padding: 8px 12px;
     border: 1px solid #cbd5e0;
     border-radius: 6px;
     font-size: 1em;
@@ -841,6 +888,23 @@ button:active, .btn-primary:active {
     cursor: not-allowed;
 }
 
+.btn-edit {
+    background: white;
+    color: #4299e1;
+    border: 2px solid #4299e1;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9em;
+}
+
+.btn-edit:hover {
+    background: #4299e1;
+    color: white;
+}
+
 .btn-delete {
     background: white;
     color: #e53e3e;
@@ -961,13 +1025,108 @@ button:active, .btn-primary:active {
 }
 
 /* Add Buyer Card */
-.add-buyer-card {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
+.buyer-actions-bar {
     margin: 20px 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border: 1px solid #e2e8f0;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.btn-add-buyer {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
+    transition: all 0.3s;
+}
+
+.btn-add-buyer:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(66, 153, 225, 0.5);
+}
+
+.btn-draw-toggle {
+    background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(237, 137, 54, 0.4);
+    transition: all 0.3s;
+}
+
+.btn-draw-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(237, 137, 54, 0.5);
+}
+
+.add-buyer-card {
+    background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin: 20px 0;
+    box-shadow: 0 6px 20px rgba(66, 153, 225, 0.15);
+    border: 2px solid #4299e1;
+    position: relative;
+    overflow: hidden;
+}
+
+.add-buyer-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #4299e1 0%, #3182ce 50%, #2c5282 100%);
+}
+
+.add-buyer-card .section-header {
+    border-bottom: 2px solid rgba(66, 153, 225, 0.3);
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+}
+
+.add-buyer-card .section-header-icon {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
+}
+
+.add-buyer-card h2 {
+    color: #2c5282;
+    font-weight: 700;
+}
+
+.add-buyer-card .section-subtitle {
+    color: #2d3748;
+    font-weight: 500;
+}
+
+.add-buyer-card input,
+.add-buyer-card select {
+    border: 2px solid #cbd5e0;
+    transition: all 0.3s;
+}
+
+.add-buyer-card input:focus,
+.add-buyer-card select:focus {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.15);
+    background: white;
+}
+
+.add-buyer-card .form-section-title {
+    color: #2c5282;
+    font-weight: 600;
 }
 
 /* Buyers Section */
@@ -2328,12 +2487,12 @@ button[onclick="deleteBuyer"]:hover {
 .days-remaining {
     background: #48bb78;
     color: white;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 0.85em;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.88em;
     font-weight: 600;
     white-space: nowrap;
-    margin-left: 10px;
+    flex-shrink: 0;
 }
 
 .days-remaining.urgent {
@@ -2500,29 +2659,256 @@ button[onclick="deleteBuyer"]:hover {
     margin: 10px 0;
 }
 
+.app-header {
+    margin-bottom: 24px;
+    padding: 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid #e2e8f0;
+}
+
+.app-logo-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-image-main {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(66, 153, 225, 0.4));
+}
+
+.logo-icon-main {
+    font-size: 2.5em;
+}
+
+.logo-text-main {
+    font-size: 2.5em;
+    font-weight: 900;
+    background: linear-gradient(135deg, #4299e1 0%, #2c5282 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 2px;
+}
+
+.raffle-selector-header {
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 3px solid #4299e1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+.raffle-selector-header h2 {
+    margin: 0 0 8px 0;
+    color: #2c5282;
+    font-size: 2em;
+    font-weight: 700;
+}
+
+.selector-subtitle {
+    margin: 0;
+    color: #718096;
+    font-size: 1em;
+    font-weight: 400;
+}
+
 #raffle-list {
-    display: grid;
-    gap: 15px;
-    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 24px 0;
 }
 
 .raffle-card {
     padding: 20px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 2px solid #e2e8f0;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.raffle-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #4299e1 0%, #3182ce 50%, #2c5282 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
 .raffle-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 24px rgba(66, 153, 225, 0.2);
+    border-color: #4299e1;
 }
 
-.raffle-card h3 {
-    margin: 0 0 10px 0;
+.raffle-card:hover::before {
+    opacity: 1;
+}
+
+.raffle-card-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.raffle-image {
+    flex-shrink: 0;
+    width: 200px;
+    height: 200px;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.raffle-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.raffle-card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.raffle-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.raffle-title {
+    margin: 0;
     color: #2c5282;
+    font-size: 1.4em;
+    font-weight: 600;
+    line-height: 1.3;
+    flex: 1;
+}
+
+.raffle-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95em;
+}
+
+.detail-row .detail-icon {
+    font-size: 1.2em;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.detail-row .detail-label {
+    color: #718096;
+    font-weight: 500;
+    min-width: 90px;
+    flex-shrink: 0;
+}
+
+.detail-row .detail-value {
+    color: #2d3748;
+    font-weight: 600;
+    flex: 1;
+}
+
+.raffle-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+    .raffle-card-layout {
+        flex-direction: column;
+    }
+    
+    .raffle-image {
+        width: 100%;
+        height: 180px;
+    }
+}
+
+.raffle-selector-actions {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .raffle-selector-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .raffle-selector-actions {
+        width: 100%;
+    }
+}
+
+.btn-create-raffle,
+.btn-import-raffle {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    white-space: nowrap;
+}
+
+.btn-create-raffle {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+}
+
+.btn-create-raffle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(72, 187, 120, 0.4);
+}
+
+.btn-import-raffle {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+}
+
+.btn-import-raffle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(66, 153, 225, 0.4);
 }
 
 /* Add these new styles for ticket display and delete button */
@@ -2578,26 +2964,30 @@ button[onclick="deleteBuyer"]:hover {
 }
 
 .back-btn {
-    background-color: #718096;
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
     color: white;
-    padding: 8px 16px;
+    padding: 12px 24px;
     border: none;
-    border-radius: 4px;
+    border-radius: 10px;
     cursor: pointer;
-    font-size: 0.9em;
-    margin-bottom: 20px;
+    font-size: 1em;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
 }
 
 .back-btn:hover {
-    background-color: #4a5568;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(66, 153, 225, 0.4);
+    background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
 }
 
-.back-btn::before {
-    content: "←";
-    font-size: 1.2em;
+.back-icon {
+    font-size: 1.3em;
+    font-weight: 700;
 }
 
 /* Remove or comment out these styles */

@@ -81,7 +81,11 @@
     <div id="login-screen">
         <div class="login-container">
             <div class="login-header">
-                <div class="login-icon">�</div>
+                <div class="app-logo">
+                    <img src="/icons/rafflez-logo-192.png" alt="RaffleZ" class="logo-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                    <span class="logo-icon" style="display: none;">🎫</span>
+                    <span class="logo-text">RaffleZ</span>
+                </div>
                 <h1 class="login-title">Raffle Management System</h1>
                 <p class="login-subtitle">Secure Access Portal</p>
             </div>
@@ -112,9 +116,28 @@
     <div id="app-content">
         <!-- Raffle Selector Section -->
         <section id="raffle-selector">
-            <h2>Select Raffle</h2>
+            <div class="app-header">
+                <div class="app-logo-main">
+                    <img src="/icons/rafflez-logo-192.png" alt="RaffleZ" class="logo-image-main" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                    <span class="logo-icon-main" style="display: none;">🎫</span>
+                    <span class="logo-text-main">RaffleZ</span>
+                </div>
+            </div>
+            <div class="raffle-selector-header">
+                <div>
+                    <h2>All Raffles</h2>
+                    <p class="selector-subtitle">Select a raffle to manage or create a new one</p>
+                </div>
+                <div class="raffle-selector-actions">
+                    <button onclick="showNewRaffleForm()" class="btn-create-raffle">
+                        ➕ Create New Raffle
+                    </button>
+                    <button onclick="showImportRaffleDialog()" class="btn-import-raffle">
+                        📥 Import Raffle
+                    </button>
+                </div>
+            </div>
             <div id="raffle-list"></div>
-            <button onclick="showNewRaffleForm()">Create New Raffle</button>
         </section>
 
         <!-- New Raffle Form Section -->
@@ -219,7 +242,16 @@
 
         <!-- Raffle Content Section -->
         <div id="raffle-content" style="display: none;">
-            <button class="back-btn" onclick="showRaffleSelector()">← Back to Raffles</button>
+            <div class="app-header">
+                <div class="app-logo-main">
+                    <span class="logo-icon-main">🎫</span>
+                    <span class="logo-text-main">RaffleZ</span>
+                </div>
+                <button class="back-btn" onclick="showRaffleSelector()">
+                    <span class="back-icon">←</span>
+                    <span>All Raffles</span>
+                </button>
+            </div>
             <section class="raffle-header-card">
                 <div class="raffle-header-content">
                     <div id="raffle-header-image" class="raffle-header-image" style="display: none;">
@@ -266,73 +298,18 @@
                 </div>
             </section>
 
-            <!-- Add Buyer Section -->
-            <section class="add-buyer-card">
-                <div class="section-header">
-                    <div class="section-header-icon">👥</div>
-                    <div>
-                        <h2>Add New Buyer</h2>
-                        <p class="section-subtitle">Register a new participant for this raffle</p>
-                    </div>
-                </div>
-                <div class="buyer-form">
-                    <div class="form-section">
-                        <h3 class="form-section-title">Buyer Information</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="name">First Name <span class="required">*</span></label>
-                                <input id="name" placeholder="Enter first name" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="surname">Surname <span class="required">*</span></label>
-                                <input id="surname" placeholder="Enter surname" required>
-                            </div>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="mobile">Mobile Number <span class="optional">(optional)</span></label>
-                                <input id="mobile" type="tel" placeholder="e.g., 082 123 4567">
-                            </div>
-                            <div class="form-group">
-                                <label for="email">Email Address <span class="required">*</span></label>
-                                <input id="email" type="email" placeholder="email@example.com" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-section">
-                        <h3 class="form-section-title">Purchase Details</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="tickets">Number of Tickets <span class="required">*</span></label>
-                                <input id="tickets" type="number" min="1" value="1" placeholder="1" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="purchaseDate">Purchase Date <span class="required">*</span></label>
-                                <input id="purchaseDate" type="date" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button onclick="addBuyer()" class="btn-primary">➕ Add Buyer</button>
-                    </div>
-                </div>
-            </section>
+            <!-- Action Buttons -->
+            <div class="buyer-actions-bar">
+                <button onclick="toggleDrawCard()" class="btn-draw-toggle" id="show-draw-card-btn">
+                    🎲 Draw Winner
+                </button>
+                <button onclick="toggleAddBuyerForm()" class="btn-add-buyer" id="show-buyer-form-btn">
+                    ➕ Add New Buyer
+                </button>
+            </div>
 
-            <section class="buyers-section">
-                <div class="section-header">
-                    <div class="section-header-icon">📋</div>
-                    <div>
-                        <h2>All Buyers</h2>
-                        <p class="section-subtitle">Manage registered participants and their tickets</p>
-                    </div>
-                </div>
-                <div id="buyers"></div>
-            </section>
-
-            <section class="draw-winner-card">
+            <!-- Draw Winner Card -->
+            <section class="draw-winner-card" id="draw-winner-card" style="display: none;">
                 <div class="section-header">
                     <div class="section-header-icon">🎲</div>
                     <div>
@@ -350,6 +327,73 @@
                     <div id="winner"></div>
                 </div>
             </section>
+
+            <!-- Add Buyer Section -->
+            <section class="add-buyer-card" id="add-buyer-form" style="display: none;">
+                <div class="section-header">
+                    <div class="section-header-icon">👥</div>
+                    <div>
+                        <h2 id="add-buyer-title">Add New Buyer</h2>
+                        <p class="section-subtitle">Register a new participant for this raffle</p>
+                    </div>
+                </div>
+                <div class="buyer-form">
+                    <div class="form-section">
+                        <h3 class="form-section-title">Buyer Information</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="buyer-name">First Name <span class="required">*</span></label>
+                                <input id="buyer-name" placeholder="Enter first name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="buyer-surname">Surname <span class="required">*</span></label>
+                                <input id="buyer-surname" placeholder="Enter surname" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="buyer-mobile">Mobile Number <span class="optional">(optional)</span></label>
+                                <input id="buyer-mobile" type="tel" placeholder="e.g., 082 123 4567">
+                            </div>
+                            <div class="form-group">
+                                <label for="buyer-email">Email Address <span class="required">*</span></label>
+                                <input id="buyer-email" type="email" placeholder="email@example.com" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3 class="form-section-title">Purchase Details</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="buyer-tickets">Number of Tickets <span class="required">*</span></label>
+                                <input id="buyer-tickets" type="number" min="1" value="1" placeholder="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="purchaseDate">Purchase Date <span class="required">*</span></label>
+                                <input id="purchaseDate" type="date" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button onclick="addBuyer()" class="btn-primary" id="buyer-submit-btn">➕ Add Buyer</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="buyers-section">
+                <div class="section-header">
+                    <div class="section-header-icon">📋</div>
+                    <div>
+                        <h2>All Buyers</h2>
+                        <p class="section-subtitle">Manage registered participants and their tickets</p>
+                    </div>
+                </div>
+                <div id="buyers"></div>
+            </section>
+
         </div>
     </div>
 </body>

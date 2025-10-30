@@ -415,6 +415,69 @@ def add_buyer(raffle_id):
         app.logger.error(f"Error adding buyer: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/buyers/<raffle_id>/<int:buyer_number>', methods=['PUT'])
+def update_buyer(raffle_id, buyer_number):
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Content-Type must be application/json"}), 400
+
+        data = request.json
+        all_buyers = load_buyers(raffle_id)
+        
+        if not all_buyers:
+            return jsonify({"error": "No buyers found for this raffle"}), 404
+        
+        # Find the buyer to update
+        buyer_index = None
+        for i, buyer in enumerate(all_buyers):
+            if buyer.get('buyerNumber') == buyer_number:
+                buyer_index = i
+                break
+        
+        if buyer_index is None:
+            return jsonify({"error": "Buyer not found"}), 404
+        
+        # Update buyer information (keep existing ticket numbers and buyer number)
+        updated_buyer = all_buyers[buyer_index]
+        updated_buyer['name'] = data.get('name', updated_buyer['name'])
+        updated_buyer['surname'] = data.get('surname', updated_buyer['surname'])
+        updated_buyer['email'] = data.get('email', updated_buyer['email'])
+        updated_buyer['mobile'] = data.get('mobile', updated_buyer.get('mobile', ''))
+        
+        # Update tickets count if changed
+        new_ticket_count = data.get('tickets', updated_buyer['tickets'])
+        if new_ticket_count != updated_buyer['tickets']:
+            # Get all existing ticket numbers from all buyers except current
+            existing_tickets = []
+            for i, buyer in enumerate(all_buyers):
+                if i != buyer_index:
+                    existing_tickets.extend(buyer.get("ticket_numbers", []))
+            
+            # Keep existing tickets or generate new ones if count increased
+            current_tickets = updated_buyer['ticket_numbers']
+            if new_ticket_count > len(current_tickets):
+                # Need more tickets
+                while len(current_tickets) < new_ticket_count:
+                    ticket_num = random.randint(100000, 999999)
+                    if ticket_num not in existing_tickets and ticket_num not in current_tickets:
+                        current_tickets.append(ticket_num)
+            elif new_ticket_count < len(current_tickets):
+                # Remove excess tickets
+                current_tickets = current_tickets[:new_ticket_count]
+            
+            updated_buyer['ticket_numbers'] = current_tickets
+            updated_buyer['tickets'] = new_ticket_count
+        
+        # Save updated buyers
+        buyers_by_raffle = json.load(open(BUYERS_FILE, 'r')) if os.path.exists(BUYERS_FILE) else {}
+        buyers_by_raffle[str(raffle_id)] = all_buyers
+        save_buyers(buyers_by_raffle)
+        
+        return jsonify({"message": "Buyer updated successfully", "buyer": updated_buyer})
+    except Exception as e:
+        app.logger.error(f"Error updating buyer: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/draw/<raffle_id>', methods=['POST'])
 def draw_winner(raffle_id):
     try:
@@ -479,6 +542,72 @@ def delete_raffle(raffle_id):
         return jsonify({"message": "Raffle deleted successfully"}), 200
     except Exception as e:
         app.logger.error(f"Error deleting raffle {raffle_id}: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/raffles/import', methods=['POST'])
+def import_raffle():
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+        
+        raffle_data = data.get('raffleData')
+        buyers_data = data.get('buyersData')
+        
+        if not raffle_data or not buyers_data:
+            return jsonify({"error": "Both raffle and buyers data are required"}), 400
+        
+        # Load existing raffles
+        raffles_data = load_raffles()
+        
+        # Get the next available raffle ID
+        existing_ids = [int(r['id']) for r in raffles_data['raffles'] if r['id'].isdigit()]
+        next_id = str(max(existing_ids) + 1) if existing_ids else "1"
+        
+        # Extract the raffle from the imported data (assuming single raffle in array)
+        if isinstance(raffle_data, dict) and 'raffles' in raffle_data:
+            imported_raffle = raffle_data['raffles'][0] if raffle_data['raffles'] else None
+        else:
+            imported_raffle = raffle_data
+        
+        if not imported_raffle:
+            return jsonify({"error": "No raffle found in imported data"}), 400
+        
+        # Assign new ID to imported raffle
+        old_id = imported_raffle.get('id')
+        imported_raffle['id'] = next_id
+        
+        # Reset draw status for imported raffle
+        imported_raffle['drawn'] = False
+        imported_raffle['winner'] = None
+        
+        # Add imported raffle to existing raffles
+        raffles_data['raffles'].append(imported_raffle)
+        save_raffles(raffles_data)
+        
+        # Load existing buyers
+        all_buyers = json.load(open(BUYERS_FILE, 'r')) if os.path.exists(BUYERS_FILE) else {}
+        
+        # Extract buyers for the old raffle ID
+        if isinstance(buyers_data, dict):
+            # Find the buyers for the old raffle ID
+            imported_buyers = buyers_data.get(str(old_id), [])
+        else:
+            imported_buyers = buyers_data
+        
+        # Add imported buyers under new raffle ID
+        if imported_buyers:
+            all_buyers[next_id] = imported_buyers
+            save_buyers(all_buyers)
+        
+        return jsonify({
+            "message": "Raffle imported successfully",
+            "raffleId": next_id,
+            "raffle": imported_raffle
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"Error importing raffle: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/buyers/<raffle_id>/<buyer_number>', methods=['DELETE'])

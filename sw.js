@@ -1,5 +1,5 @@
-const CACHE_VERSION = 11;
-const CACHE_NAME = `raffle-system-v${CACHE_VERSION}`;
+const CACHE_VERSION = 14;
+const CACHE_NAME = 'raffle-cache-v32';
 const ASSETS_TO_CACHE = [
   '/',
   '/config.js',

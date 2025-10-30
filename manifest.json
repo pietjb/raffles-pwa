@@ -1,22 +1,22 @@
 {
-  "name": "Multi-Raffle System",
-  "short_name": "Raffles",
-  "description": "A system to manage multiple raffles and their tickets",
+  "name": "RaffleZ - Raffle Management System",
+  "short_name": "RaffleZ",
+  "description": "Professional raffle management and ticket tracking system",
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#f5f7fa",
-  "theme_color": "#2c5282",
+  "theme_color": "#4299e1",
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/icons/rafflez-logo-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "/icons/rafflez-logo-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

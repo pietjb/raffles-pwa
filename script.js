@@ -368,46 +368,41 @@ async function loadRaffles() {
             }
             
             return `
-            <div class="raffle-card ${statusClass}">
-                ${raffle.thumbnail || raffle.image ? `
-                <div class="raffle-image">
-                    <img src="/uploads/${raffle.thumbnail ? 'thumbnails/' + raffle.thumbnail : raffle.image}" 
-                         alt="${raffle.name}" 
-                         onclick="selectRaffle('${raffle.id}')">
-                    ${statusBadge}
-                </div>` : ''}
-                <div class="raffle-card-content">
-                    <div class="raffle-card-header" onclick="selectRaffle('${raffle.id}')">
-                        <h3 class="raffle-title">${raffle.name}</h3>
-                        ${daysDisplay}
-                    </div>
-                    <div class="raffle-details" onclick="selectRaffle('${raffle.id}')">
-                        <div class="detail-item">
-                            <span class="detail-icon">📅</span>
-                            <div class="detail-content">
-                                <span class="detail-label">Draw Date</span>
-                                <span class="detail-value">${drawDate.toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                            </div>
+            <div class="raffle-card ${statusClass}" onclick="selectRaffle('${raffle.id}')">
+                <div class="raffle-card-layout">
+                    ${raffle.thumbnail || raffle.image ? `
+                    <div class="raffle-image">
+                        <img src="/uploads/${raffle.thumbnail ? 'thumbnails/' + raffle.thumbnail : raffle.image}" 
+                             alt="${raffle.name}">
+                        ${statusBadge}
+                    </div>` : ''}
+                    <div class="raffle-card-content">
+                        <div class="raffle-card-header">
+                            <h3 class="raffle-title">${raffle.name}</h3>
+                            ${daysDisplay}
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-icon">🎁</span>
-                            <div class="detail-content">
-                                <span class="detail-label">Prize</span>
+                        <div class="raffle-details">
+                            <div class="detail-row">
+                                <span class="detail-icon">📅</span>
+                                <span class="detail-label">Draw Date:</span>
+                                <span class="detail-value">${drawDate.toLocaleDateString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-icon">🎁</span>
+                                <span class="detail-label">Prize:</span>
                                 <span class="detail-value">${raffle.prize}</span>
                             </div>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-icon">💰</span>
-                            <div class="detail-content">
-                                <span class="detail-label">Ticket Cost</span>
+                            <div class="detail-row">
+                                <span class="detail-icon">💰</span>
+                                <span class="detail-label">Ticket Cost:</span>
                                 <span class="detail-value">R${raffle.ticketCost.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="raffle-actions">
-                        <button class="btn-select" onclick="selectRaffle('${raffle.id}')">Select Raffle</button>
-                        <button class="btn-close" onclick="event.stopPropagation(); closeRaffle('${raffle.id}')">Close</button>
-                    </div>
+                </div>
+                <div class="raffle-actions">
+                    <button class="btn-select" onclick="event.stopPropagation(); selectRaffle('${raffle.id}')">Select Raffle</button>
+                    <button class="btn-close" onclick="event.stopPropagation(); closeRaffle('${raffle.id}')">Close</button>
                 </div>
             </div>
         `}).join("");
@@ -921,6 +916,9 @@ async function loadBuyers() {
                                 <span>Mark as Paid</span>
                             </label>
                             <div class="buyer-action-buttons">
+                                <button class="btn-edit" onclick="editBuyer(${b.buyerNumber})">
+                                    ✏️ Edit
+                                </button>
                                 <button class="btn-request" 
                                     onclick="showPaymentOptions(${b.buyerNumber}, ${b.tickets})"
                                     ${b.paymentReceived ? 'disabled' : ''}>
@@ -951,15 +949,11 @@ async function requestPayment(buyerNumber, ticketCount) {
             throw new Error('Buyer not found');
         }
         const buyer = await buyerRes.json();
-        console.log('Buyer details:', buyer); // Debug log
         
-        // Extract initial and surname from buyer name
-        const nameParts = buyer.name.trim().split(' ').filter(Boolean);
-        const initial = nameParts[0].charAt(0);
-        const surname = nameParts[nameParts.length - 1];
+        // Extract initial from first name and use surname field
+        const initial = buyer.name.charAt(0);
+        const surname = buyer.surname;
         const paymentReference = `${initial}${surname}`.toUpperCase();
-        
-        console.log('Generated payment reference:', paymentReference); // Debug log
 
         // Get raffle details
         const raffleRes = await fetch(`/api/raffles`);
@@ -1202,6 +1196,113 @@ ${raffle.organizerName || 'Raffle Team'}`;
     }
 }
 
+async function editBuyer(buyerNumber) {
+    if (!currentRaffle) {
+        alert("No raffle selected");
+        return;
+    }
+
+    try {
+        // Fetch buyer details
+        const res = await fetch(`/api/buyers/${currentRaffle}/${buyerNumber}`);
+        if (!res.ok) {
+            throw new Error('Buyer not found');
+        }
+        const buyer = await res.json();
+
+        // Populate form with buyer data
+        document.getElementById("buyer-name").value = buyer.name;
+        document.getElementById("buyer-surname").value = buyer.surname;
+        document.getElementById("buyer-email").value = buyer.email;
+        document.getElementById("buyer-mobile").value = buyer.mobile || '';
+        document.getElementById("buyer-tickets").value = buyer.tickets;
+
+        // Show and update form
+        const form = document.getElementById("add-buyer-form");
+        const btn = document.getElementById('show-buyer-form-btn');
+        
+        form.style.display = 'block';
+        btn.textContent = '✖️ Cancel';
+        btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+        
+        // Change form title and button
+        document.getElementById("add-buyer-title").textContent = "Edit Buyer";
+        const submitBtn = document.getElementById("buyer-submit-btn");
+        submitBtn.textContent = "💾 Update Buyer";
+        submitBtn.onclick = (e) => {
+            e.preventDefault();
+            updateBuyer(buyerNumber);
+        };
+
+        // Scroll to form
+        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (error) {
+        console.error('Error loading buyer for edit:', error);
+        alert('Failed to load buyer details: ' + error.message);
+    }
+}
+
+async function updateBuyer(buyerNumber) {
+    if (!currentRaffle) {
+        alert("No raffle selected");
+        return;
+    }
+
+    const name = document.getElementById("buyer-name").value.trim();
+    const surname = document.getElementById("buyer-surname").value.trim();
+    const email = document.getElementById("buyer-email").value.trim();
+    const mobile = document.getElementById("buyer-mobile").value.trim();
+    const tickets = parseInt(document.getElementById("buyer-tickets").value);
+
+    if (!name || !surname || !email || !tickets) {
+        alert("Please fill in all required fields");
+        return;
+    }
+
+    // Validate email format
+    if (!email.includes('@')) {
+        alert("Please enter a valid email address");
+        return;
+    }
+
+    // Validate tickets number
+    if (tickets <= 0) {
+        alert("Number of tickets must be greater than 0");
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/buyers/${currentRaffle}/${buyerNumber}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                name,
+                surname,
+                email,
+                mobile,
+                tickets
+            })
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || 'Failed to update buyer');
+        }
+
+        const result = await res.json();
+        alert(`✅ ${result.message}`);
+
+        // Hide the form
+        hideAddBuyerForm();
+
+        // Reload buyers list
+        await loadBuyers();
+    } catch (error) {
+        console.error('Error updating buyer:', error);
+        alert('Failed to update buyer: ' + error.message);
+    }
+}
+
 async function deleteBuyer(buyerNumber) {
     if (!currentRaffle) {
         alert("No raffle selected");
@@ -1213,7 +1314,6 @@ async function deleteBuyer(buyerNumber) {
     }
 
     try {
-        console.log(`Deleting buyer #${buyerNumber} from raffle ${currentRaffle}`); // Debug log
         const res = await fetch(`/api/buyers/${currentRaffle}/${buyerNumber}`, {
             method: "DELETE"
         });
@@ -1794,6 +1894,63 @@ async function exportRaffleData() {
         return;
     }
 
+    // Show export format selection modal
+    const modal = document.createElement('div');
+    modal.className = 'payment-modal';
+    modal.innerHTML = `
+        <div class="payment-modal-content" style="max-width: 520px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header" style="position: sticky; top: 0; background: white; z-index: 10; border-bottom: 1px solid #e2e8f0;">
+                <h3 style="margin: 0; font-size: 1.3em; color: #2d3748;">� Export Raffle Data</h3>
+                <button class="modal-close-btn" onclick="this.parentElement.parentElement.parentElement.remove()" 
+                    style="background: #f7fafc; color: #2d3748; font-size: 1.5em; width: 36px; height: 36px; border-radius: 8px; border: 2px solid #e2e8f0; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-weight: 600;"
+                    onmouseover="this.style.background='#ef4444'; this.style.color='white'; this.style.borderColor='#ef4444'"
+                    onmouseout="this.style.background='#f7fafc'; this.style.color='#2d3748'; this.style.borderColor='#e2e8f0'">✕</button>
+            </div>
+            <div class="modal-body" style="padding: 32px 28px;">
+                <p style="margin: 0 0 28px 0; color: #718096; font-size: 0.95em; line-height: 1.6;">
+                    Choose the export format for your raffle data:
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <button class="btn-primary" onclick="exportAsCSV()" 
+                        style="padding: 20px; font-size: 1em; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); border: none; border-radius: 10px; color: white; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3); text-align: left;"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(72, 187, 120, 0.4)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(72, 187, 120, 0.3)'">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <span style="font-size: 1.8em;">📊</span>
+                            <span style="font-size: 1.1em; font-weight: 600;">Export as CSV</span>
+                        </div>
+                        <div style="font-size: 0.88em; opacity: 0.95; padding-left: 46px; line-height: 1.5;">
+                            Spreadsheet format with summary statistics and buyer details
+                        </div>
+                    </button>
+                    <button class="btn-primary" onclick="exportAsJSON()" 
+                        style="padding: 20px; font-size: 1em; background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); border: none; border-radius: 10px; color: white; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3); text-align: left;"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(66, 153, 225, 0.4)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(66, 153, 225, 0.3)'">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <span style="font-size: 1.8em;">📄</span>
+                            <span style="font-size: 1.1em; font-weight: 600;">Export as JSON</span>
+                        </div>
+                        <div style="font-size: 0.88em; opacity: 0.95; padding-left: 46px; line-height: 1.5;">
+                            Raw data files for backup and import (buyers.json + raffle_data.json)
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function exportAsCSV() {
+    // Close modal
+    document.querySelector('.payment-modal')?.remove();
+    
+    if (!currentRaffle) {
+        alert("Please select a raffle first");
+        return;
+    }
+
     try {
         // Get raffle and buyers data
         const [raffleRes, buyersRes] = await Promise.all([
@@ -1894,6 +2051,86 @@ async function exportRaffleData() {
     }
 }
 
+async function exportAsJSON() {
+    // Close modal
+    document.querySelector('.payment-modal')?.remove();
+    
+    if (!currentRaffle) {
+        alert("Please select a raffle first");
+        return;
+    }
+
+    try {
+        // Get raffle and buyers data
+        const [raffleRes, buyersRes] = await Promise.all([
+            fetch(`/api/raffles/${currentRaffle}`),
+            fetch(`/api/buyers/${currentRaffle}`)
+        ]);
+
+        if (!raffleRes.ok || !buyersRes.ok) {
+            throw new Error('Failed to fetch data');
+        }
+
+        const raffle = await raffleRes.json();
+        const buyers = await buyersRes.json();
+
+        // Create raffle_data.json structure
+        const raffleData = {
+            raffles: [raffle],
+            current_raffle: currentRaffle
+        };
+
+        // Create buyers.json structure
+        const buyersData = {
+            [currentRaffle]: buyers
+        };
+
+        // Generate timestamp for filenames
+        const timestamp = new Date().toISOString().split('T')[0];
+        const raffleName = raffle.name.replace(/[^a-z0-9]/gi, '_');
+
+        // Download raffle_data.json
+        const raffleBlob = new Blob([JSON.stringify(raffleData, null, 2)], { type: 'application/json' });
+        const raffleLink = document.createElement('a');
+        raffleLink.href = URL.createObjectURL(raffleBlob);
+        raffleLink.download = `${raffleName}_raffle_data_${timestamp}.json`;
+        raffleLink.style.display = 'none';
+        document.body.appendChild(raffleLink);
+        raffleLink.click();
+        document.body.removeChild(raffleLink);
+
+        // Small delay between downloads
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Download buyers.json
+        const buyersBlob = new Blob([JSON.stringify(buyersData, null, 2)], { type: 'application/json' });
+        const buyersLink = document.createElement('a');
+        buyersLink.href = URL.createObjectURL(buyersBlob);
+        buyersLink.download = `${raffleName}_buyers_${timestamp}.json`;
+        buyersLink.style.display = 'none';
+        document.body.appendChild(buyersLink);
+        buyersLink.click();
+        document.body.removeChild(buyersLink);
+
+        // Show success message
+        const exportButtons = document.querySelectorAll('.btn-export');
+        exportButtons.forEach(btn => {
+            const originalText = btn.textContent;
+            const originalBg = btn.style.background;
+            btn.textContent = '✓ 2 Files Exported!';
+            btn.style.background = '#48bb78';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = originalBg;
+            }, 2500);
+        });
+
+    } catch (error) {
+        console.error('Error exporting JSON:', error);
+        alert('Failed to export JSON data: ' + error.message);
+    }
+}
+
 function escapeCSV(str) {
     if (str === null || str === undefined) return '';
     str = str.toString();
@@ -1903,6 +2140,286 @@ function escapeCSV(str) {
     return str;
 }
 
+function showImportRaffleDialog() {
+    const modal = document.createElement('div');
+    modal.className = 'payment-modal';
+    modal.innerHTML = `
+        <div class="payment-modal-content" style="max-width: 580px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header" style="position: sticky; top: 0; background: white; z-index: 10; border-bottom: 1px solid #e2e8f0;">
+                <h3 style="margin: 0; font-size: 1.3em; color: #2d3748;">📥 Import Raffle</h3>
+                <button class="modal-close-btn" onclick="this.parentElement.parentElement.parentElement.remove()" 
+                    style="background: #f7fafc; color: #2d3748; font-size: 1.5em; width: 36px; height: 36px; border-radius: 8px; border: 2px solid #e2e8f0; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-weight: 600;"
+                    onmouseover="this.style.background='#ef4444'; this.style.color='white'; this.style.borderColor='#ef4444'"
+                    onmouseout="this.style.background='#f7fafc'; this.style.color='#2d3748'; this.style.borderColor='#e2e8f0'">✕</button>
+            </div>
+            <div class="modal-body" style="padding: 32px 28px;">
+                <p style="margin: 0 0 28px 0; color: #718096; font-size: 0.95em; line-height: 1.6;">
+                    Select the two JSON files that were exported from a raffle to import them into the system.
+                </p>
+                
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 12px; font-size: 0.95em; color: #2d3748;">
+                            <span style="font-size: 1.3em;">📄</span>
+                            <span>Raffle Data File</span>
+                        </label>
+                        <input type="file" id="import-raffle-file" accept=".json" 
+                            onchange="validateImportFile(this, 'raffle')"
+                            style="width: 100%; padding: 12px 14px; border: 2px solid #cbd5e0; border-radius: 8px; font-size: 0.9em; background: white; cursor: pointer; transition: all 0.2s;"
+                            onmouseover="this.style.borderColor='#4299e1'" 
+                            onmouseout="this.style.borderColor='#cbd5e0'">
+                        <div id="raffle-file-status" style="margin-top: 10px; font-size: 0.88em; min-height: 22px; font-weight: 500;"></div>
+                    </div>
+                    
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 12px; font-size: 0.95em; color: #2d3748;">
+                            <span style="font-size: 1.3em;">👥</span>
+                            <span>Buyers Data File</span>
+                        </label>
+                        <input type="file" id="import-buyers-file" accept=".json" 
+                            onchange="validateImportFile(this, 'buyers')"
+                            style="width: 100%; padding: 12px 14px; border: 2px solid #cbd5e0; border-radius: 8px; font-size: 0.9em; background: white; cursor: pointer; transition: all 0.2s;"
+                            onmouseover="this.style.borderColor='#4299e1'" 
+                            onmouseout="this.style.borderColor='#cbd5e0'">
+                        <div id="buyers-file-status" style="margin-top: 10px; font-size: 0.88em; min-height: 22px; font-weight: 500;"></div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 28px; padding: 16px 18px; background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%); border-radius: 10px; border-left: 4px solid #f59e0b; font-size: 0.9em; line-height: 1.6; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.1);">
+                    <div style="display: flex; align-items: start; gap: 10px;">
+                        <span style="font-size: 1.2em;">⚠️</span>
+                        <div>
+                            <strong style="color: #92400e;">Important:</strong>
+                            <span style="color: #78350f;"> The imported raffle will be assigned a new ID and reset to "not drawn" status.</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="processImportRaffle()" class="btn-primary" 
+                    style="width: 100%; margin-top: 28px; padding: 16px; font-size: 1.05em; font-weight: 600; background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); border: none; border-radius: 10px; color: white; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(66, 153, 225, 0.4)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(66, 153, 225, 0.3)'">
+                    📥 Import Raffle
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function validateImportFile(input, type) {
+    const statusDiv = document.getElementById(`${type}-file-status`);
+    
+    if (!input.files[0]) {
+        statusDiv.innerHTML = '';
+        return;
+    }
+    
+    try {
+        const file = input.files[0];
+        const text = await file.text();
+        const data = JSON.parse(text);
+        
+        let validation;
+        if (type === 'raffle') {
+            validation = validateRaffleStructure(data);
+        } else {
+            validation = validateBuyersStructure(data);
+        }
+        
+        if (validation.valid) {
+            statusDiv.innerHTML = '<span style="color: #10b981;">✅ Valid file structure</span>';
+            input.style.borderColor = '#10b981';
+        } else {
+            statusDiv.innerHTML = `<span style="color: #ef4444;">❌ ${validation.error}</span>`;
+            input.style.borderColor = '#ef4444';
+        }
+    } catch (error) {
+        statusDiv.innerHTML = '<span style="color: #ef4444;">❌ Invalid JSON file</span>';
+        input.style.borderColor = '#ef4444';
+    }
+}
+
+function validateRaffleStructure(data) {
+    // Check if it's an object with required fields
+    if (!data || typeof data !== 'object') {
+        return { valid: false, error: 'Raffle data must be an object' };
+    }
+    
+    // Check for raffles array structure (exported format)
+    if ('raffles' in data && Array.isArray(data.raffles)) {
+        if (data.raffles.length === 0) {
+            return { valid: false, error: 'Raffles array is empty' };
+        }
+        // Validate first raffle in array
+        data = data.raffles[0];
+    }
+    
+    // Required fields for a raffle
+    const required = ['id', 'name', 'organizerName', 'drawDate', 'prize', 'ticketCost', 'drawn'];
+    const missing = required.filter(field => !(field in data));
+    
+    if (missing.length > 0) {
+        return { valid: false, error: `Raffle missing required fields: ${missing.join(', ')}` };
+    }
+    
+    // Validate types
+    if (typeof data.name !== 'string' || data.name.trim() === '') {
+        return { valid: false, error: 'Raffle name must be a non-empty string' };
+    }
+    
+    if (typeof data.organizerName !== 'string' || data.organizerName.trim() === '') {
+        return { valid: false, error: 'Organizer name must be a non-empty string' };
+    }
+    
+    if (typeof data.ticketCost !== 'number' || data.ticketCost <= 0) {
+        return { valid: false, error: 'Ticket cost must be a positive number' };
+    }
+    
+    if (typeof data.drawn !== 'boolean') {
+        return { valid: false, error: 'Drawn field must be a boolean' };
+    }
+    
+    // Validate banking details if present
+    if (data.bankingDetails) {
+        const bankingRequired = ['accountOwner', 'bankName', 'accountNumber'];
+        const bankingMissing = bankingRequired.filter(field => !(field in data.bankingDetails));
+        if (bankingMissing.length > 0) {
+            return { valid: false, error: `Banking details missing: ${bankingMissing.join(', ')}` };
+        }
+    }
+    
+    return { valid: true };
+}
+
+function validateBuyersStructure(data) {
+    // Check if it's an object
+    if (!data || typeof data !== 'object') {
+        return { valid: false, error: 'Buyers data must be an object' };
+    }
+    
+    // Buyers data should be organized by raffle ID (keys are raffle IDs)
+    const raffleIds = Object.keys(data);
+    
+    if (raffleIds.length === 0) {
+        return { valid: false, error: 'Buyers data is empty' };
+    }
+    
+    // Validate at least one raffle's buyers
+    const firstRaffleId = raffleIds[0];
+    const buyers = data[firstRaffleId];
+    
+    if (!Array.isArray(buyers)) {
+        return { valid: false, error: `Buyers for raffle ${firstRaffleId} must be an array` };
+    }
+    
+    if (buyers.length === 0) {
+        return { valid: false, error: `No buyers found for raffle ${firstRaffleId}` };
+    }
+    
+    // Validate each buyer in the first raffle
+    const requiredFields = ['name', 'surname', 'email', 'mobile', 'tickets', 'buyerNumber', 'ticket_numbers'];
+    
+    for (let i = 0; i < buyers.length; i++) {
+        const buyer = buyers[i];
+        const missing = requiredFields.filter(field => !(field in buyer));
+        
+        if (missing.length > 0) {
+            return { 
+                valid: false, 
+                error: `Buyer #${i + 1} missing required fields: ${missing.join(', ')}` 
+            };
+        }
+        
+        // Validate types
+        if (typeof buyer.name !== 'string' || buyer.name.trim() === '') {
+            return { valid: false, error: `Buyer #${i + 1} name must be a non-empty string` };
+        }
+        
+        if (typeof buyer.surname !== 'string' || buyer.surname.trim() === '') {
+            return { valid: false, error: `Buyer #${i + 1} surname must be a non-empty string` };
+        }
+        
+        if (typeof buyer.tickets !== 'number' || buyer.tickets <= 0) {
+            return { valid: false, error: `Buyer #${i + 1} tickets must be a positive number` };
+        }
+        
+        if (!Array.isArray(buyer.ticket_numbers) || buyer.ticket_numbers.length !== buyer.tickets) {
+            return { valid: false, error: `Buyer #${i + 1} ticket_numbers array length must match tickets count` };
+        }
+    }
+    
+    return { valid: true };
+}
+
+async function processImportRaffle() {
+    const raffleFileInput = document.getElementById('import-raffle-file');
+    const buyersFileInput = document.getElementById('import-buyers-file');
+    
+    if (!raffleFileInput.files[0] || !buyersFileInput.files[0]) {
+        alert('Please select both files');
+        return;
+    }
+    
+    try {
+        // Read raffle data file
+        const raffleFile = raffleFileInput.files[0];
+        const raffleText = await raffleFile.text();
+        const raffleData = JSON.parse(raffleText);
+        
+        // Validate raffle structure
+        const raffleValidation = validateRaffleStructure(raffleData);
+        if (!raffleValidation.valid) {
+            alert('❌ Invalid Raffle File\n\n' + raffleValidation.error);
+            return;
+        }
+        
+        // Read buyers data file
+        const buyersFile = buyersFileInput.files[0];
+        const buyersText = await buyersFile.text();
+        const buyersData = JSON.parse(buyersText);
+        
+        // Validate buyers structure
+        const buyersValidation = validateBuyersStructure(buyersData);
+        if (!buyersValidation.valid) {
+            alert('❌ Invalid Buyers File\n\n' + buyersValidation.error);
+            return;
+        }
+        
+        // Send to backend
+        const res = await fetch('/api/raffles/import', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                raffleData: raffleData,
+                buyersData: buyersData
+            })
+        });
+        
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.error || 'Failed to import raffle');
+        }
+        
+        const result = await res.json();
+        
+        // Close modal
+        document.querySelector('.payment-modal')?.remove();
+        
+        // Show success message
+        alert(`✅ ${result.message}\n\nRaffle "${result.raffle.name}" has been imported with ID: ${result.raffleId}`);
+        
+        // Reload raffles list
+        await loadRaffles();
+        
+    } catch (error) {
+        console.error('Error importing raffle:', error);
+        alert('Failed to import raffle: ' + error.message);
+    }
+}
+
 async function addBuyer() {
     if (!currentRaffle) {
         alert("Please select a raffle first");
@@ -1910,11 +2427,11 @@ async function addBuyer() {
     }
 
     // Get form values
-    const name = document.getElementById("name").value.trim();
-    const surname = document.getElementById("surname").value.trim();
-    const mobile = document.getElementById("mobile").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const tickets = parseInt(document.getElementById("tickets").value);
+    const name = document.getElementById("buyer-name").value.trim();
+    const surname = document.getElementById("buyer-surname").value.trim();
+    const mobile = document.getElementById("buyer-mobile").value.trim();
+    const email = document.getElementById("buyer-email").value.trim();
+    const tickets = parseInt(document.getElementById("buyer-tickets").value);
     const purchaseDate = document.getElementById("purchaseDate").value;
 
     // Validate required fields
@@ -1936,7 +2453,6 @@ async function addBuyer() {
     }
 
     try {
-        console.log('Adding buyer to raffle:', currentRaffle); // Debug log
         const res = await fetch(`/api/buyers/${currentRaffle}`, {
             method: "POST",
             headers: {
@@ -1959,15 +2475,20 @@ async function addBuyer() {
         }
 
         // Clear form
-        document.getElementById("name").value = "";
-        document.getElementById("surname").value = "";
-        document.getElementById("mobile").value = "";
-        document.getElementById("email").value = "";
-        document.getElementById("tickets").value = "";
+        document.getElementById("buyer-name").value = "";
+        document.getElementById("buyer-surname").value = "";
+        document.getElementById("buyer-mobile").value = "";
+        document.getElementById("buyer-email").value = "";
+        document.getElementById("buyer-tickets").value = "1";
         
         // Keep today's date
         const today = new Date().toISOString().split('T')[0];
         document.getElementById("purchaseDate").value = today;
+
+        alert("✅ Buyer added successfully!");
+
+        // Hide the form
+        hideAddBuyerForm();
 
         // Refresh buyers list
         await loadBuyers();
@@ -1975,6 +2496,69 @@ async function addBuyer() {
     } catch (error) {
         console.error('Error adding buyer:', error);
         alert(error.message || 'Failed to add buyer');
+    }
+}
+
+function toggleAddBuyerForm() {
+    const form = document.getElementById('add-buyer-form');
+    const btn = document.getElementById('show-buyer-form-btn');
+    
+    if (form.style.display === 'none') {
+        // Show form for adding
+        form.style.display = 'block';
+        btn.textContent = '✖️ Cancel';
+        btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+        
+        // Reset to Add mode
+        document.getElementById('add-buyer-title').textContent = 'Add New Buyer';
+        document.getElementById('buyer-submit-btn').textContent = '➕ Add Buyer';
+        document.getElementById('buyer-submit-btn').onclick = addBuyer;
+        
+        // Scroll to form
+        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+        // Hide form
+        hideAddBuyerForm();
+    }
+}
+
+function hideAddBuyerForm() {
+    const form = document.getElementById('add-buyer-form');
+    const btn = document.getElementById('show-buyer-form-btn');
+    
+    form.style.display = 'none';
+    btn.textContent = '➕ Add New Buyer';
+    btn.style.background = 'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)';
+    
+    // Clear form
+    document.getElementById("buyer-name").value = "";
+    document.getElementById("buyer-surname").value = "";
+    document.getElementById("buyer-mobile").value = "";
+    document.getElementById("buyer-email").value = "";
+    document.getElementById("buyer-tickets").value = "1";
+    
+    // Reset to today's date
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("purchaseDate").value = today;
+}
+
+function toggleDrawCard() {
+    const card = document.getElementById('draw-winner-card');
+    const btn = document.getElementById('show-draw-card-btn');
+    
+    if (card.style.display === 'none') {
+        // Show draw card
+        card.style.display = 'block';
+        btn.textContent = '✖️ Close Draw';
+        btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+        
+        // Scroll to card
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+        // Hide draw card
+        card.style.display = 'none';
+        btn.textContent = '🎲 Draw Winner';
+        btn.style.background = 'linear-gradient(135deg, #f6ad55 0%, #ed8936 100%)';
     }
 }
 
