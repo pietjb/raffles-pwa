@@ -1,0 +1,370 @@
+{
+  "1": [
+    {
+      "buyerNumber": 1,
+      "email": "albie@de-toren.com",
+      "mobile": "0828735478",
+      "name": "Albie",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-28",
+      "surname": "Koch",
+      "ticket_numbers": [
+        345478,
+        950612,
+        572883,
+        330312,
+        357976,
+        521913,
+        793692,
+        948630,
+        775992,
+        979793
+      ],
+      "tickets": 10
+    },
+    {
+      "buyerNumber": 2,
+      "email": "kleingeluk@mdwireless.co.za",
+      "mobile": "0823964094",
+      "name": "Henkie",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-28",
+      "surname": "du Plessis",
+      "ticket_numbers": [
+        476459,
+        625688,
+        238118,
+        679173
+      ],
+      "tickets": 4
+    },
+    {
+      "buyerNumber": 3,
+      "email": "rietteprins@gmail.com",
+      "mobile": "0823713799",
+      "name": "Riette",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-28",
+      "surname": "Prins",
+      "ticket_numbers": [
+        971928
+      ],
+      "tickets": 1
+    },
+    {
+      "buyerNumber": 4,
+      "email": "Johannasteenhuisen@gmail.com",
+      "mobile": "",
+      "name": "Hanneke",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-29",
+      "surname": "Steenhuisen",
+      "ticket_numbers": [
+        202573
+      ],
+      "tickets": 1
+    },
+    {
+      "buyerNumber": 5,
+      "email": "jopaulsen5@gmail.com",
+      "mobile": "0726020448",
+      "name": "Jo-Ane",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-30",
+      "surname": "Paulsen",
+      "ticket_numbers": [
+        848466,
+        811730,
+        746385,
+        259003,
+        165566
+      ],
+      "tickets": 5
+    },
+    {
+      "buyerNumber": 6,
+      "email": "justin@dairymc.co.za",
+      "mobile": "0823136513",
+      "name": "Justin",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-30",
+      "surname": "Moolman",
+      "ticket_numbers": [
+        588119,
+        685008,
+        571274,
+        203917
+      ],
+      "tickets": 4
+    },
+    {
+      "buyerNumber": 7,
+      "email": "alicia@grvproperties.co.za",
+      "mobile": "0723176795",
+      "name": "Alicia",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-31",
+      "surname": "Lubbe",
+      "ticket_numbers": [
+        236408,
+        466948,
+        825178
+      ],
+      "tickets": 3
+    },
+    {
+      "buyerNumber": 8,
+      "email": "rene@ideasmuggler.co.za",
+      "mobile": "0693153101",
+      "name": "Ren\u00e9",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-31",
+      "surname": "van der Vyver",
+      "ticket_numbers": [
+        707699
+      ],
+      "tickets": 1
+    },
+    {
+      "buyerNumber": 9,
+      "email": "slvanstaden@gmail.com",
+      "mobile": "083 292 8084",
+      "name": "Sarel",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-31",
+      "surname": "van Staden",
+      "ticket_numbers": [
+        392891,
+        346660,
+        932700,
+        940035,
+        843051
+      ],
+      "tickets": 5
+    },
+    {
+      "buyerNumber": 10,
+      "email": "jdvst3@gmail.com",
+      "mobile": "082 867 4636",
+      "name": "Jan",
+      "paymentReceived": true,
+      "purchaseDate": "2025-11-01",
+      "surname": "van Staden",
+      "ticket_numbers": [
+        798106,
+        272858,
+        154683,
+        352993
+      ],
+      "tickets": 4
+    },
+    {
+      "buyerNumber": 11,
+      "email": "jschutte78@gmail.com",
+      "mobile": "0834113007",
+      "name": "Johan",
+      "paymentReceived": true,
+      "purchaseDate": "2025-11-04",
+      "surname": "Schutte",
+      "ticket_numbers": [
+        326076
+      ],
+      "tickets": 1
+    },
+    {
+      "buyerNumber": 12,
+      "email": "elisepr@gmail.com",
+      "mobile": "0833010111",
+      "name": "Elise",
+      "paymentReceived": false,
+      "purchaseDate": "2025-11-06",
+      "surname": "Pretorius",
+      "ticket_numbers": [
+        455718,
+        711653
+      ],
+      "tickets": 2
+    }
+  ],
+  "2": [
+    {
+      "buyerNumber": 1,
+      "email": "kleingeluk@mdwireless.co.za",
+      "mobile": "0826958040",
+      "name": "Letsie",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-28",
+      "surname": "du Plessis",
+      "ticket_numbers": [
+        294356,
+        935009,
+        397192,
+        346260
+      ],
+      "tickets": 4
+    },
+    {
+      "buyerNumber": 2,
+      "email": "jschultz3524@gmail.com",
+      "mobile": "0828551780",
+      "name": "Juanita",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-28",
+      "surname": "Schultz",
+      "ticket_numbers": [
+        259603,
+        835191,
+        215040,
+        107236,
+        217057,
+        656536,
+        785110,
+        364360,
+        569342,
+        126569
+      ],
+      "tickets": 10
+    },
+    {
+      "buyerNumber": 3,
+      "email": "rietteprins@gmail.com",
+      "mobile": "0823713799",
+      "name": "Riette",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-28",
+      "surname": "Prins",
+      "ticket_numbers": [
+        968718
+      ],
+      "tickets": 1
+    },
+    {
+      "buyerNumber": 4,
+      "email": "Johannasteenhuisen@gmail.com",
+      "mobile": "0825531905",
+      "name": "Hanneke",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-29",
+      "surname": "Steenhuisen",
+      "ticket_numbers": [
+        684906
+      ],
+      "tickets": 1
+    },
+    {
+      "buyerNumber": 5,
+      "email": "jopaulsen5@gmail.com",
+      "mobile": "0726020448",
+      "name": "Jo-Ane",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-30",
+      "surname": "Paulsen",
+      "ticket_numbers": [
+        792097,
+        127949,
+        760400,
+        882848,
+        106527
+      ],
+      "tickets": 5
+    },
+    {
+      "buyerNumber": 6,
+      "email": "bokkamoolman@gmail.com",
+      "mobile": "0825248864",
+      "name": "Maritza",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-30",
+      "surname": "Moolman",
+      "ticket_numbers": [
+        622146,
+        441527,
+        132901,
+        308950,
+        532351
+      ],
+      "tickets": 5
+    },
+    {
+      "buyerNumber": 7,
+      "email": "alicia@grvproperties.co.za",
+      "mobile": "0723176795",
+      "name": "Alicia",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-31",
+      "surname": "Lubbe",
+      "ticket_numbers": [
+        333314,
+        206816,
+        643213
+      ],
+      "tickets": 3
+    },
+    {
+      "buyerNumber": 8,
+      "email": "rene@ideasmuggler.co.za",
+      "mobile": "0693153101",
+      "name": "Ren\u00e9",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-31",
+      "surname": "van der Vyver",
+      "ticket_numbers": [
+        404563
+      ],
+      "tickets": 1
+    },
+    {
+      "buyerNumber": 9,
+      "email": "slvanstaden@gmail.com",
+      "mobile": "083 292 8084",
+      "name": "Sarel",
+      "paymentReceived": true,
+      "purchaseDate": "2025-10-31",
+      "surname": "van Staden",
+      "ticket_numbers": [
+        199025,
+        430285,
+        577499,
+        186939,
+        650343
+      ],
+      "tickets": 5
+    },
+    {
+      "buyerNumber": 10,
+      "email": "aneldejager@gmail.com",
+      "mobile": "0769619572",
+      "name": "Anel",
+      "paymentReceived": true,
+      "purchaseDate": "2025-11-01",
+      "surname": "de Jager",
+      "ticket_numbers": [
+        167743,
+        772631,
+        367494,
+        879284,
+        752739,
+        855199,
+        124686,
+        244687,
+        723439,
+        491467
+      ],
+      "tickets": 10
+    },
+    {
+      "buyerNumber": 11,
+      "email": "elisepr@gmail.com",
+      "mobile": "0833010111",
+      "name": "Elise",
+      "paymentReceived": false,
+      "purchaseDate": "2025-11-06",
+      "surname": "Pretoruis",
+      "ticket_numbers": [
+        785862,
+        158375
+      ],
+      "tickets": 2
+    }
+  ]
+}
