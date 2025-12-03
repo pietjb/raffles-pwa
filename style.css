@@ -1595,6 +1595,31 @@ button:active, .btn-primary:active {
     box-shadow: 0 6px 20px rgba(237, 137, 54, 0.4);
 }
 
+.notify-all-btn {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    border: none;
+    padding: 15px 35px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+}
+
+.notify-all-btn:hover {
+    background: linear-gradient(135deg, #3182ce 0%, #2c5aa0 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(66, 153, 225, 0.4);
+}
+
+.notify-all-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
 @keyframes rainbow {
     0% { filter: hue-rotate(0deg); }
     100% { filter: hue-rotate(360deg); }
@@ -3448,6 +3473,17 @@ button[onclick="drawWinner()"]:disabled:hover {
 
     .winner-reveal {
         padding: 15px;
+    }
+
+    .winner-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .winner-actions button {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 1em;
     }
 
     .ticket-cycler {

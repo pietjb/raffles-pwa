@@ -176,12 +176,148 @@
       "email": "elisepr@gmail.com",
       "mobile": "0833010111",
       "name": "Elise",
-      "paymentReceived": false,
+      "paymentReceived": true,
       "purchaseDate": "2025-11-06",
       "surname": "Pretorius",
       "ticket_numbers": [
         455718,
         711653
+      ],
+      "tickets": 2
+    },
+    {
+      "buyerNumber": 13,
+      "email": "Nideneboshoff777@gmail.com",
+      "mobile": "083 294 2299",
+      "name": "Nidene",
+      "paymentReceived": true,
+      "purchaseDate": "2025-11-26",
+      "surname": "Boshoff",
+      "ticket_numbers": [
+        960860,
+        826907
+      ],
+      "tickets": 2
+    },
+    {
+      "buyerNumber": 14,
+      "email": "nicketheron@gmail.com",
+      "mobile": "0685519021",
+      "name": "Nicke",
+      "paymentReceived": true,
+      "purchaseDate": "2025-11-26",
+      "surname": "Theron",
+      "ticket_numbers": [
+        431767,
+        648235,
+        632015,
+        399002
+      ],
+      "tickets": 4
+    },
+    {
+      "buyerNumber": 15,
+      "email": "wachter72@yahoo.com",
+      "mobile": "0823422308",
+      "name": "Tony",
+      "paymentReceived": true,
+      "purchaseDate": "2025-11-27",
+      "surname": "Watcher",
+      "ticket_numbers": [
+        257566,
+        120498
+      ],
+      "tickets": 2
+    },
+    {
+      "buyerNumber": 16,
+      "email": "Renetteduples138@gmail.com",
+      "mobile": "0761548309",
+      "name": "Renette",
+      "paymentReceived": true,
+      "purchaseDate": "2025-11-28",
+      "surname": "Barnard",
+      "ticket_numbers": [
+        907485,
+        150477
+      ],
+      "tickets": 2
+    },
+    {
+      "buyerNumber": 17,
+      "email": "paul.r.hansen@outlook.com",
+      "mobile": "",
+      "name": "Paul",
+      "paymentReceived": true,
+      "purchaseDate": "2025-11-29",
+      "surname": "Hansen",
+      "ticket_numbers": [
+        534882,
+        551651,
+        869748,
+        257543,
+        514149,
+        700886
+      ],
+      "tickets": 6
+    },
+    {
+      "buyerNumber": 18,
+      "email": "alma@besterandson.co.za",
+      "mobile": "",
+      "name": "Alma",
+      "paymentReceived": true,
+      "purchaseDate": "2025-11-29",
+      "surname": "Bester",
+      "ticket_numbers": [
+        735902,
+        625022,
+        742607,
+        311521
+      ],
+      "tickets": 4
+    },
+    {
+      "buyerNumber": 19,
+      "email": "irenelotter61@gmail.com",
+      "mobile": "",
+      "name": "Irene",
+      "paymentReceived": true,
+      "purchaseDate": "2025-11-29",
+      "surname": "Lotter",
+      "ticket_numbers": [
+        893879,
+        847340
+      ],
+      "tickets": 2
+    },
+    {
+      "buyerNumber": 20,
+      "email": "amretief@gmail.com",
+      "mobile": "082 557 3948",
+      "name": "Anna-Marie",
+      "paymentReceived": true,
+      "purchaseDate": "2025-12-02",
+      "surname": "Retief",
+      "ticket_numbers": [
+        260364,
+        897675,
+        974399,
+        526745
+      ],
+      "tickets": 4
+    },
+    {
+      "buyerNumber": 21,
+      "email": "nicolejodi@icloud.com",
+      "mobile": "",
+      "name": "Nicole",
+      "paymentReceived": true,
+      "purchaseDate": "2025-12-03",
+      "surname": "May",
+      "ticket_numbers": [
+        506809,
+        698325
       ],
       "tickets": 2
     }
@@ -357,12 +493,26 @@
       "email": "elisepr@gmail.com",
       "mobile": "0833010111",
       "name": "Elise",
-      "paymentReceived": false,
+      "paymentReceived": true,
       "purchaseDate": "2025-11-06",
       "surname": "Pretoruis",
       "ticket_numbers": [
         785862,
         158375
+      ],
+      "tickets": 2
+    },
+    {
+      "buyerNumber": 12,
+      "email": "wachter72@yahoo.com",
+      "mobile": "0823422308",
+      "name": "Tony",
+      "paymentReceived": true,
+      "purchaseDate": "2025-11-27",
+      "surname": "Watcher",
+      "ticket_numbers": [
+        294109,
+        355143
       ],
       "tickets": 2
     }

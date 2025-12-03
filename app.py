@@ -3,6 +3,7 @@ from flask_cors import CORS  # Add this import
 import json
 import os
 import random
+import secrets
 import logging
 import subprocess
 import qrcode
@@ -10,6 +11,13 @@ from io import BytesIO
 import base64
 from werkzeug.utils import secure_filename
 from PIL import Image
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -115,6 +123,93 @@ def save_buyers(data):
     except Exception as e:
         app.logger.error(f"Error saving buyers: {str(e)}")
         raise
+
+def send_winner_notification_email(buyer_email, buyer_name, raffle_name, winner_info):
+    """Send email notification to a buyer about the draw result"""
+    try:
+        smtp_server = os.environ.get('SMTP_SERVER', '')
+        smtp_port = os.environ.get('SMTP_PORT', '')
+        sender_email = os.environ.get('SENDER_EMAIL', '')
+        sender_password = os.environ.get('SENDER_PASSWORD', '')
+        sender_name = os.environ.get('SENDER_NAME', 'Raffle System')
+        
+        # Check if email is configured
+        if not all([smtp_server, smtp_port, sender_email, sender_password]):
+            app.logger.warning("Email not configured - skipping notification")
+            return False
+        
+        # Create email message
+        msg = MIMEMultipart('alternative')
+        msg['From'] = f"{sender_name} <{sender_email}>"
+        msg['To'] = buyer_email
+        msg['Subject'] = f"🎉 {raffle_name} - Draw Result Announcement"
+        
+        # Create plain text body
+        text_body = f"""
+Dear {buyer_name},
+
+Thank you for participating in {raffle_name}!
+
+The draw has been completed!
+
+{winner_info}
+
+We appreciate your participation in this raffle.
+
+Best regards,
+{sender_name}
+"""
+        
+        # Create HTML body with nicer formatting
+        html_body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h2 style="color: #2c5282; margin: 0;">🎉 Draw Result Announcement</h2>
+                        <p style="color: #666; margin: 10px 0 0 0;">{raffle_name}</p>
+                    </div>
+                    
+                    <div style="background: white; padding: 20px; border-radius: 6px; border-left: 4px solid #2c5282;">
+                        <p>Dear {buyer_name},</p>
+                        <p>Thank you for participating in <strong>{raffle_name}</strong>!</p>
+                        <p>The draw has been completed! Here are the results:</p>
+                        
+                        <div style="background: #f0f4ff; padding: 15px; border-radius: 4px; margin: 20px 0; text-align: center;">
+                            <p style="margin: 0; font-size: 18px; color: #2c5282;"><strong>{winner_info}</strong></p>
+                        </div>
+                        
+                        <p>We appreciate your participation in this raffle!</p>
+                        <p style="margin-bottom: 5px;">Best regards,</p>
+                        <p style="margin: 0; color: #666;"><strong>{sender_name}</strong></p>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #999;">
+                        <p style="margin: 0;">This is an automated message. Please do not reply to this email.</p>
+                    </div>
+                </div>
+            </body>
+        </html>
+        """
+        
+        # Attach both plain text and HTML versions
+        part1 = MIMEText(text_body, 'plain')
+        part2 = MIMEText(html_body, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        # Send email via SMTP
+        with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+        
+        app.logger.info(f"Winner notification sent to {buyer_email}")
+        return True
+        
+    except Exception as e:
+        app.logger.error(f"Error sending winner notification email: {str(e)}")
+        return False
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
@@ -503,7 +598,12 @@ def draw_winner(raffle_id):
         if not tickets:
             return jsonify({"error": "No paid tickets available for draw"}), 400
 
-        winner = random.choice(tickets)
+        # Improved randomization: shuffle tickets thoroughly and use secure random selection
+        # This ensures fair distribution across all buyers, not biased towards the first buyer
+        random.shuffle(tickets)  # Shuffle the entire list
+        winner_index = secrets.randbelow(len(tickets))  # Use cryptographic randomness
+        winner = tickets[winner_index]
+        
         winner_text = f"Winner: Ticket #{str(winner['number']).zfill(6)} - {winner['name']}"
 
         # Save the winner in the raffle data
@@ -518,6 +618,77 @@ def draw_winner(raffle_id):
         return jsonify({"winner": winner_text})
     except Exception as e:
         app.logger.error(f"Error drawing winner: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/notify-all/<raffle_id>', methods=['POST'])
+def notify_all_buyers(raffle_id):
+    """Send winner notification email to all ticket buyers"""
+    try:
+        # Get raffle details
+        raffles_data = load_raffles()
+        raffle = next((r for r in raffles_data['raffles'] if r['id'] == raffle_id), None)
+        
+        if not raffle:
+            return jsonify({"error": "Raffle not found"}), 404
+        
+        if not raffle.get('winner'):
+            return jsonify({"error": "No winner has been drawn yet"}), 400
+        
+        # Get all buyers for this raffle
+        all_buyers = load_buyers(raffle_id)
+        
+        if not all_buyers:
+            return jsonify({"error": "No buyers registered for this raffle"}), 400
+        
+        # Send notification to all buyers
+        successful_emails = 0
+        failed_emails = []
+        
+        for buyer in all_buyers:
+            if buyer.get('email'):
+                try:
+                    buyer_name = f"{buyer['name']} {buyer['surname']}"
+                    success = send_winner_notification_email(
+                        buyer['email'],
+                        buyer_name,
+                        raffle['name'],
+                        raffle['winner']
+                    )
+                    
+                    if success:
+                        successful_emails += 1
+                    else:
+                        failed_emails.append(buyer['email'])
+                        
+                except Exception as e:
+                    app.logger.error(f"Error sending email to {buyer['email']}: {str(e)}")
+                    failed_emails.append(buyer['email'])
+        
+        # Prepare response message
+        if successful_emails > 0 and len(failed_emails) == 0:
+            message = f"✓ Successfully sent notifications to {successful_emails} buyer(s)!"
+            return jsonify({
+                "message": message,
+                "successful": successful_emails,
+                "failed": 0
+            }), 200
+        elif successful_emails > 0:
+            message = f"Sent to {successful_emails} buyer(s). Failed to send to {len(failed_emails)} buyer(s)."
+            return jsonify({
+                "message": message,
+                "successful": successful_emails,
+                "failed": len(failed_emails),
+                "failed_emails": failed_emails
+            }), 207  # 207 Multi-Status for partial success
+        else:
+            return jsonify({
+                "error": "Failed to send notifications to all buyers. Email may not be configured.",
+                "successful": 0,
+                "failed": len(all_buyers)
+            }), 500
+            
+    except Exception as e:
+        app.logger.error(f"Error notifying all buyers: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/raffles/<raffle_id>', methods=['DELETE'])

@@ -659,6 +659,15 @@ async function selectRaffle(raffleId) {
                         <button class="contact-winner-btn" onclick="showWinnerDetails('${raffleId}')">
                             👤 Winner Details
                         </button>
+                        <button class="notify-all-btn" onclick="notifyAllBuyers('${raffleId}', this)">
+                            📧 Notify All Buyers
+                        </button>
+                        <button class="celebrate-btn" onclick="celebrateAgain()">
+                            🎆 Celebrate Again!
+                        </button>
+                        <button class="redraw-btn" onclick="confirmRedraw()">
+                            🔄 Re-Draw Winner
+                        </button>
                     </div>
                 </div>`;
         } else {
@@ -1564,6 +1573,9 @@ async function drawWinner() {
                     <button class="contact-winner-btn" onclick="showWinnerDetails('${currentRaffle}')">
                         👤 Winner Details
                     </button>
+                    <button class="notify-all-btn" onclick="notifyAllBuyers('${currentRaffle}', this)">
+                        📧 Notify All Buyers
+                    </button>
                     <button class="celebrate-btn" onclick="celebrateAgain()">
                         🎆 Celebrate Again!
                     </button>
@@ -1714,6 +1726,107 @@ function confirmRedraw() {
         
         // Trigger new draw (which will check for unpaid buyers automatically)
         drawWinner();
+    }
+}
+
+async function notifyAllBuyers(raffleId, buttonElement) {
+    try {
+        // Get current raffle details
+        const raffleRes = await fetch(`/api/raffles/${raffleId}`);
+        if (!raffleRes.ok) {
+            throw new Error('Failed to fetch raffle details');
+        }
+        
+        const raffle = await raffleRes.json();
+        
+        if (!raffle || !raffle.winner) {
+            alert('⚠️ No winner has been drawn yet.');
+            return;
+        }
+        
+        // Get all buyers for this raffle
+        const buyersRes = await fetch(`/api/buyers/${raffleId}`);
+        if (!buyersRes.ok) {
+            throw new Error('Failed to fetch buyer details');
+        }
+        
+        const allBuyers = await buyersRes.json();
+        
+        // Extract email addresses from buyers
+        const buyerEmails = allBuyers
+            .filter(buyer => buyer.email)
+            .map(buyer => buyer.email);
+        
+        if (buyerEmails.length === 0) {
+            alert('⚠️ No buyer email addresses found for this raffle.');
+            return;
+        }
+        
+        // Create email subject
+        const emailSubject = `🎉 ${raffle.name} - Draw Result Announcement`;
+        
+        // Parse winner details from the winner string (format: "Winner: Ticket #123456 - Name Surname")
+        const winnerText = raffle.winner;
+        
+        // Create a nicely formatted email body
+        const emailBody = `Dear Valued Participant,
+
+Thank you for participating in ${raffle.name}!
+
+═══════════════════════════════════════════════════════════════
+
+🎯 DRAW RESULT
+
+${winnerText}
+
+🎁 Prize: ${raffle.prize}
+📅 Draw Date: ${raffle.drawDate}
+
+═══════════════════════════════════════════════════════════════
+
+We appreciate your participation in this raffle!
+
+If you have any questions, please feel free to contact us.
+
+Best regards,
+${raffle.organizerName}
+
+═══════════════════════════════════════════════════════════════`;
+        
+        // Confirm before opening Gmail
+        const confirmed = confirm(
+            '📧 OPEN GMAIL FOR WINNER NOTIFICATION\n\n' +
+            `Raffle: ${raffle.name}\n` +
+            `Winner: ${winnerText}\n` +
+            `Recipients: ${buyerEmails.length} buyer(s)\n\n` +
+            'Gmail will open with all ticket buyers pre-populated as recipients.\n' +
+            'You can review and send the email from Gmail.\n\n' +
+            'Continue?'
+        );
+        
+        if (!confirmed) {
+            return;
+        }
+        
+        // Build Gmail URL with all recipients
+        const allRecipientsStr = buyerEmails.join(',');
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(allRecipientsStr)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        
+        // Try opening Gmail
+        const gmailWindow = window.open(gmailUrl, '_blank');
+        
+        // If popup was blocked, fallback to mailto
+        if (!gmailWindow) {
+            const mailtoUrl = `mailto:${encodeURIComponent(allRecipientsStr)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+            window.location.href = mailtoUrl;
+            alert('ℹ️ Gmail popup was blocked. Your default email client is opening instead.');
+        } else {
+            alert(`✅ Gmail opened with ${buyerEmails.length} recipient(s)!\n\nPlease review and send the email from Gmail.`);
+        }
+        
+    } catch (error) {
+        console.error('Error notifying buyers:', error);
+        alert(`❌ Error preparing notifications:\n\n${error.message}`);
     }
 }
 
